@@ -10,6 +10,7 @@ Ein eigenständiges, touchoptimiertes Zahlen-Kartenspiel für 2 bis 4 Spieler.
 - Lokale Speicherung laufender Partien
 - Sound und haptisches Feedback
 - Installierbare Offline-PWA für iPhone und andere moderne Browser
+- Helles klassisches Design mit grünem Filztisch, vier Kartenfarben und Eckzahlen
 
 ## Auf dem iPhone installieren
 

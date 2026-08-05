@@ -18,7 +18,7 @@ let deferredInstallPrompt = null;
 let soundOn = localStorage.getItem('tiefstapel-sound') !== 'off';
 let audioContext = null;
 
-function valueClass(value){ return value <= 0 ? 'value-low' : value <= 6 ? 'value-mid' : 'value-high'; }
+function valueClass(value){ return value <= 0 ? 'value-blue' : value <= 4 ? 'value-green' : value <= 8 ? 'value-yellow' : 'value-red'; }
 function isHumanTurn(){ return game && game.players[game.currentPlayer]?.type === 'human'; }
 function liveCards(player){ return player.grid.filter(card => !card.removed); }
 function hiddenCount(player){ return liveCards(player).filter(card => !card.revealed).length; }
@@ -57,7 +57,7 @@ function load(){
 function cardMarkup(card,index,mini=false){
   if(card.removed) return `<button class="${mini?'mini-card':'card'} removed" data-index="${index}" disabled></button>`;
   if(!card.revealed) return `<button class="${mini?'mini-card':'card'} back" data-index="${index}" aria-label="Verdeckte Karte"></button>`;
-  return `<button class="${mini?'mini-card open':'card '+valueClass(card.value)}" data-index="${index}" aria-label="Karte ${card.value}">${card.value}</button>`;
+  return `<button class="${mini?'mini-card open':'card '+valueClass(card.value)}" data-index="${index}" data-value="${card.value}" aria-label="Karte ${card.value}">${card.value}</button>`;
 }
 
 function render(){
@@ -69,13 +69,14 @@ function render(){
   const top=game.discard.at(-1);
   els.discardValue.textContent=top ?? '–';
   els.discard.className=`pile card ${valueClass(top ?? 0)}`;
+  els.discard.dataset.value=top ?? '–';
   els.scorebar.innerHTML=game.players.map((p,i)=>`<div class="score-chip ${i===game.currentPlayer?'active':''}"><span>${esc(p.name)}</span><b>${p.total}</b></div>`).join('');
   els.opponents.innerHTML=game.players.map((p,i)=>({p,i})).filter(x=>x.i!==game.currentPlayer).map(({p,i})=>`<div><div class="mini-player ${i===game.currentPlayer?'active':''}" title="${esc(p.name)}">${p.grid.map((c,j)=>cardMarkup(c,j,true)).join('')}</div></div>`).join('');
   els.board.innerHTML=current.grid.map((c,i)=>cardMarkup(c,i)).join('');
   els.board.classList.toggle('selecting',isHumanTurn()&&['must-swap','deck-choice'].includes(game.phase));
   els.board.classList.toggle('reveal-mode',revealMode);
   els.drawnPanel.classList.toggle('hidden',game.drawnCard===null);
-  if(game.drawnCard!==null){ els.drawnCard.textContent=game.drawnCard; els.drawnCard.className=`card drawn ${valueClass(game.drawnCard)}`; }
+  if(game.drawnCard!==null){ els.drawnCard.textContent=game.drawnCard; els.drawnCard.dataset.value=game.drawnCard; els.drawnCard.className=`card drawn ${valueClass(game.drawnCard)}`; }
   els.discardDrawn.classList.toggle('hidden',game.phase!=='deck-choice'||!isHumanTurn());
   els.discardDrawn.textContent=revealMode?'Verdeckte Karte antippen …':'Ablegen & Karte aufdecken';
   els.deck.disabled=!isHumanTurn()||game.phase!=='choose-pile';

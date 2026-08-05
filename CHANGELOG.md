@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 – 2026-08-05
+- Vollständig helles, klassisches Erscheinungsbild mit cremefarbenen Papierflächen und grünem Filztisch.
+- Eigenständige Karten im Vierfarbensystem: Blau, Grün, Gelb und Rot.
+- Klassische Eckzahlen, große Mittelwerte und gemusterte blaue Kartenrückseiten.
+- Helle Dialoge, Punktetafeln und Bedienelemente mit verbessertem Tageslichtkontrast.
+- Mobile Sichtprüfung bei 390×844 und 360×740 ohne Überlauf.
+- Offline-Cache auf Version v3 aktualisiert.
+
 ## 0.1.0 – 2026-08-05
 - Vollständige Regel-Engine für 2–4 Spieler.
 - Lokaler Mehrspieler und 1–3 Computergegner mit drei Stärken.
