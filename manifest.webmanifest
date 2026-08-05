@@ -1,0 +1,19 @@
+{
+  "id": "/tiefstapel/",
+  "name": "TIEFSTAPEL – Niedrig gewinnt",
+  "short_name": "TIEFSTAPEL",
+  "description": "Taktisches Zahlen-Kartenspiel für 2 bis 4 Spieler.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#0d1626",
+  "theme_color": "#0d1626",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {"src":"icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}

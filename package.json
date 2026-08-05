@@ -1,0 +1,11 @@
+{
+  "name": "tiefstapel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check": "node --check src/engine.js && node --check src/app.js && node --check sw.js",
+    "serve": "python3 -m http.server 4173"
+  }
+}
