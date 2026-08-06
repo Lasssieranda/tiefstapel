@@ -47,5 +47,5 @@ test('Klassisches helles Kartendesign hat vier Wertfarben und Eckzahlen', async 
     assert.ok(css.includes(token), `CSS-Merkmal fehlt: ${token}`);
   }
   assert.match(app, /data-value=/);
-  assert.match(sw, /tiefstapel-v3/);
+  assert.match(sw, /tiefstapel-v4/);
 });

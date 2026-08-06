@@ -1,5 +1,5 @@
 import {
-  createGame, startRound, revealInitialCard, drawFromDiscard, drawFromDeck,
+  createGame, startRound, revealInitialCard, drawFromDiscard, drawFromDeck, swapDrawnCard,
   discardDrawnAndReveal, chooseBotAction, chooseBotDeckResolution
 } from './engine.js';
 
