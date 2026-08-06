@@ -1,7 +1,7 @@
 import {
   createGame, startRound, revealInitialCard, drawFromDiscard, drawFromDeck, swapDrawnCard,
   discardDrawnAndReveal, chooseBotAction, chooseBotDeckResolution
-} from './engine.js';
+} from './engine.js?v=201';
 
 const $ = id => document.getElementById(id);
 const els = {
