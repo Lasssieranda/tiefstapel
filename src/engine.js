@@ -59,9 +59,8 @@ export function startRound(game) {
   for (const player of game.players) {
     player.grid = Array.from({ length: 12 }, () => ({ value: drawDeckRaw(game), revealed: false, removed: false }));
     player.roundScore = null;
-    const indexes = shuffle([...Array(12).keys()], game.rng).slice(0, 2);
-    for (const i of indexes) player.grid[i].revealed = true;
   }
+  game.initialReveals = game.players.map(() => 0);
   game.discard.push(drawDeckRaw(game));
   if (game.previousFinisher !== null) {
     game.currentPlayer = game.previousFinisher;
@@ -72,8 +71,34 @@ export function startRound(game) {
       if (sum > best) { best = sum; game.currentPlayer = index; }
     });
   }
-  game.phase = 'choose-pile';
-  game.log = [`Runde ${game.round} beginnt. ${game.players[game.currentPlayer].name} startet.`];
+  game.phase = 'initial-reveal';
+  game.currentPlayer = 0;
+  game.log = [`Runde ${game.round} beginnt. Jeder Spieler deckt zwei Karten auf.`];
+  return game;
+}
+
+export function revealInitialCard(game, index) {
+  requirePhase(game, 'initial-reveal');
+  const playerIndex = game.currentPlayer;
+  const player = game.players[playerIndex];
+  const card = player.grid[index];
+  if (!card || card.removed || card.revealed) throw new Error('Bitte eine verdeckte eigene Karte wählen.');
+  if ((game.initialReveals?.[playerIndex] ?? 0) >= 2) throw new Error('Dieser Spieler hat bereits zwei Startkarten aufgedeckt.');
+  card.revealed = true;
+  game.initialReveals[playerIndex] = (game.initialReveals[playerIndex] ?? 0) + 1;
+  game.log.push(`${player.name} deckt eine Startkarte auf.`);
+  if (game.initialReveals[playerIndex] === 2) {
+    if (playerIndex < game.players.length - 1) game.currentPlayer += 1;
+    else {
+      let best = -Infinity;
+      game.players.forEach((candidate, i) => {
+        const sum = candidate.grid.filter(c => c.revealed).reduce((n, c) => n + c.value, 0);
+        if (sum > best) { best = sum; game.currentPlayer = i; }
+      });
+      game.phase = 'choose-pile';
+      game.log.push(`${game.players[game.currentPlayer].name} startet mit der höchsten Startsumme.`);
+    }
+  }
   return game;
 }
 
