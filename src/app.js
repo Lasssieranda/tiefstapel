@@ -2,14 +2,14 @@ import {
   createGame, startRound, revealInitialCard, drawFromDiscard, drawFromDeck, swapDrawnCard,
   discardDrawnAndReveal, chooseBotAction, chooseBotMandatorySwap, chooseBotDeckResolution,
   createSavedGame, restoreSavedGame
-} from './engine.js?v=300';
+} from './engine.js?v=301';
 
 const $ = id => document.getElementById(id);
 const els = {
   setup:$('setup'), setupForm:$('setup-form'), humans:$('human-count'), bots:$('bot-count'), difficulty:$('difficulty'),
   setupError:$('setup-error'), continueBtn:$('continue-btn'), scorebar:$('scorebar'), opponents:$('opponents'), board:$('board'),
   deck:$('deck-pile'), discard:$('discard-pile'), deckCount:$('deck-count'), discardValue:$('discard-value'),
-  roundLabel:$('round-label'), turnLabel:$('turn-label'), instruction:$('instruction'), drawnPanel:$('drawn-panel'),
+  roundLabel:$('round-label'), turnLabel:$('turn-label'), turnToken:$('turn-token'), instruction:$('instruction'), drawnPanel:$('drawn-panel'),
   drawnCard:$('drawn-card'), discardDrawn:$('discard-drawn'), status:$('status-pill'), soundLabel:$('sound-label'),
   result:$('result-modal'), resultContent:$('result-content'), toast:$('toast')
 };
@@ -42,6 +42,11 @@ function tone(kind='tap'){
 }
 function haptic(pattern=12){ if(navigator.vibrate) navigator.vibrate(pattern); }
 function toast(message){ els.toast.textContent=message; els.toast.classList.add('show'); clearTimeout(toast.timer); toast.timer=setTimeout(()=>els.toast.classList.remove('show'),1700); }
+function pulseBoard(kind){
+  document.body.dataset.feedback=kind;
+  clearTimeout(pulseBoard.timer);
+  pulseBoard.timer=setTimeout(()=>delete document.body.dataset.feedback,520);
+}
 
 function save(){
   if(!game) return;
@@ -75,6 +80,9 @@ function render(){
   if(!game) return;
   const current=game.players[game.currentPlayer];
   document.body.dataset.phase=game.phase;
+  const activeLabel=game.phase==='round-over' ? 'Runde beendet' : game.phase==='game-over' ? 'Endstand' : current.name;
+  els.turnToken.querySelector('span').textContent=activeLabel;
+  els.turnToken.classList.toggle('is-human',isHumanTurn() && !['round-over','game-over'].includes(game.phase));
   els.roundLabel.textContent=`Runde ${game.round}`;
   els.turnLabel.textContent=game.phase==='round-over'?'Runde beendet':game.phase==='game-over'?'Spiel beendet':game.phase==='initial-reveal'?`${current.name} deckt Startkarten auf`:`${current.name} ist dran`;
   els.deckCount.textContent=game.deck.length;
@@ -131,23 +139,23 @@ function startNewGame(){
 
 function handlePile(source){
   if(!isHumanTurn()||game.phase!=='choose-pile') return;
-  revealMode=false; source==='deck'?drawFromDeck(game):drawFromDiscard(game); tone('flip'); haptic(); render();
+  revealMode=false; source==='deck'?drawFromDeck(game):drawFromDiscard(game); pulseBoard(source==='deck'?'draw':'take'); tone('flip'); haptic(); render();
 }
 function handleCard(index){
   if(!isHumanTurn()||!game) return;
   try{
     if(game.phase==='initial-reveal'){
-      revealInitialCard(game,index); tone('flip'); haptic();
+      revealInitialCard(game,index); pulseBoard('reveal'); tone('flip'); haptic();
     }else if(game.phase==='must-swap'||(game.phase==='deck-choice'&&!revealMode)){
-      const before=game.log.length; swapDrawnCard(game,index); tone('flip'); haptic(); announceColumns(before);
+      const before=game.log.length; swapDrawnCard(game,index); pulseBoard('swap'); tone('flip'); haptic(); announceColumns(before);
     }else if(game.phase==='deck-choice'&&revealMode){
-      const before=game.log.length; discardDrawnAndReveal(game,index); revealMode=false; tone('flip'); haptic(); announceColumns(before);
+      const before=game.log.length; discardDrawnAndReveal(game,index); revealMode=false; pulseBoard('reveal'); tone('flip'); haptic(); announceColumns(before);
     }else return;
     render();
   }catch(error){ toast(error.message); haptic([20,30,20]); }
 }
 function announceColumns(logStart){
-  if(game.log.slice(logStart).some(line=>line.includes('Dreier-Spalte'))){ tone('column'); haptic([20,35,45]); toast('Dreier-Spalte abgeräumt!'); }
+  if(game.log.slice(logStart).some(line=>line.includes('Dreier-Spalte'))){ pulseBoard('column'); tone('column'); haptic([20,35,45]); toast('Dreier-Spalte abgeräumt!'); }
 }
 
 function scheduleBot(){

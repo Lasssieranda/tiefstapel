@@ -62,10 +62,11 @@ test('Eigenständiges Premium-Kartendesign hat klare Zustände, Wertfarben und E
 
   for (const token of [
     '--surface:', '--felt:', '--gold:', '.value-blue', '.value-green', '.value-yellow', '.value-red',
-    '.card[data-value]::before', '.card[data-value]::after', '#discard-pile::after', '.table::before', '@keyframes selectablePulse'
+    '.card[data-value]::before', '.card[data-value]::after', '#discard-pile::after', '.table::before', '@keyframes selectablePulse',
+    '.turn-token', '@keyframes pileReady', '@keyframes pileDraw', '@keyframes boardSettle'
   ]) assert.ok(css.includes(token), `CSS-Merkmal fehlt: ${token}`);
 
-  for (const token of ['setup-benefits', 'aria-live="polite"', 'opponent-name', 'opponent-summary']) {
+  for (const token of ['setup-benefits', 'aria-live="polite"', 'opponent-name', 'opponent-summary', 'id="turn-token"']) {
     assert.ok(html.includes(token) || app.includes(token), `UI-Merkmal fehlt: ${token}`);
   }
   assert.match(html, /<button[^>]+id="status-pill"/);
@@ -83,15 +84,16 @@ test('Eigenständiges Premium-Kartendesign hat klare Zustände, Wertfarben und E
   assert.match(app, /chooseBotMandatorySwap/);
   for (const phase of ['initial-reveal','choose-pile','must-swap','deck-choice']) assert.ok(app.includes(`'${phase}'`));
   assert.match(app, /document\.body\.dataset\.phase/);
-  assert.match(app, /engine\.js\?v=300/);
-  assert.match(sw, /tiefstapel-v6/);
-  assert.match(sw, /src\/app\.js\?v=300/);
-  assert.match(sw, /manifest\.webmanifest\?v=300/);
-  assert.match(sw, /icons\/icon-192\.png\?v=300/);
-  assert.match(sw, /icons\/icon-512\.png\?v=300/);
-  assert.match(html, /src\/app\.js\?v=300/);
-  assert.match(html, /manifest\.webmanifest\?v=300/);
-  assert.match(html, /icons\/icon-192\.png\?v=300/);
-  assert.ok(manifest.icons.every(icon => icon.src.endsWith('?v=300')));
-  assert.equal(manifest.theme_color, '#163b34');
+  assert.match(app, /pulseBoard/);
+  assert.match(app, /engine\.js\?v=301/);
+  assert.match(sw, /tiefstapel-v7/);
+  assert.match(sw, /src\/app\.js\?v=301/);
+  assert.match(sw, /manifest\.webmanifest\?v=301/);
+  assert.match(sw, /icons\/icon-192\.png\?v=301/);
+  assert.match(sw, /icons\/icon-512\.png\?v=301/);
+  assert.match(html, /src\/app\.js\?v=301/);
+  assert.match(html, /manifest\.webmanifest\?v=301/);
+  assert.match(html, /icons\/icon-192\.png\?v=301/);
+  assert.ok(manifest.icons.every(icon => icon.src.endsWith('?v=301')));
+  assert.equal(manifest.theme_color, '#113e35');
 });

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 – 2026-08-13
+- Premium-Spiel-HUD mit klarer aktiver-Spieler-Markierung und stärkerer optischer Hierarchie.
+- Stapelwahl ist als ruhiger Licht-/Rahmen-Puls sichtbar; Zieh-, Tausch-, Aufdeck- und Spaltenaktionen erhalten kontrolliertes Bewegungsfeedback.
+- Mobile Zielabläufe bei 390×844 und 360×740 inklusive Offline-Neustart nach dem UI-Update geprüft.
+- App-Shell auf `?v=301` und Offline-Cache auf `tiefstapel-v7` aktualisiert.
+
 ## 0.3.0 – 2026-08-13
 - Vollständiges Mobile-first-Redesign mit tiefgrünem Spieltisch, warmen Papierflächen und zurückhaltenden Goldakzenten.
 - Eigenständige, kontrastreiche Zahlenkarten mit klaren Auswahl-, Zieh- und Tauschzuständen.

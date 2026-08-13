@@ -248,9 +248,13 @@ main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
   justify-content: center;
   text-align: center;
 }
-.turn-copy > span:first-child { color: var(--gold-soft); font-size: 9px; letter-spacing: .2em; font-weight: 900; text-transform: uppercase; }
+.turn-copy > #round-label { color: var(--gold-soft); font-size: 9px; letter-spacing: .2em; font-weight: 900; text-transform: uppercase; }
 .turn-copy strong { margin: 3px 0 2px; color: #fffdf5; font-family: Georgia, "Times New Roman", serif; font-size: 21px; line-height: 1.1; text-shadow: 0 2px 5px #092a25a8; }
-.turn-copy span:last-child { color: #edf8f3; font-size: 11px; line-height: 1.3; }
+.turn-copy > #instruction { color: #edf8f3; font-size: 11px; line-height: 1.3; }
+.turn-token { align-self: center; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 5px; padding: 4px 8px; border: 1px solid #f4dfa364; border-radius: 999px; background: #082d268c; color: #d9ebe3; font-size: 7px; font-weight: 900; letter-spacing: .14em; line-height: 1; text-transform: uppercase; box-shadow: inset 0 1px #ffffff12; }
+.turn-token i { width: 6px; height: 6px; border-radius: 50%; background: #9db5aa; box-shadow: 0 0 0 3px #9db5aa22; }
+.turn-token.is-human { border-color: #f3d2828a; background: #0a372dd9; color: #fff7df; }
+.turn-token.is-human i { background: var(--gold); box-shadow: 0 0 0 3px #e2aa4b2b, 0 0 12px #e2aa4b88; }
 
 .piles {
   position: relative;
@@ -278,6 +282,10 @@ main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .pile:not(:disabled):active { transform: translateY(2px) scale(.97); }
 .pile:not(:disabled) { box-shadow: 0 0 0 2px #f3d28255, 0 8px 17px #092d2875, inset 0 0 0 1px #283e3833; }
 .pile:disabled { filter: saturate(.65) brightness(.82); opacity: .72; }
+body[data-phase="choose-pile"] .pile:not(:disabled) { animation: pileReady 1.9s ease-in-out infinite; }
+body[data-phase="choose-pile"] .pile:not(:disabled):nth-child(2) { animation-delay: .15s; }
+body[data-phase="must-swap"] #discard-pile,
+body[data-phase="deck-choice"] .drawn-panel { box-shadow: 0 0 0 2px #f3d28275, 0 10px 25px #092d288f, inset 0 1px #ffffff24; }
 .pile-caption {
   position: absolute;
   z-index: 5;
@@ -418,6 +426,11 @@ main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
   outline-offset: 1px;
   animation: selectablePulse 1.45s ease-in-out infinite;
 }
+body[data-feedback="draw"] .deck { animation: pileDraw .38s cubic-bezier(.2,.85,.25,1); }
+body[data-feedback="take"] #discard-pile { animation: pileDraw .38s cubic-bezier(.2,.85,.25,1); }
+body[data-feedback="swap"] .board,
+body[data-feedback="reveal"] .board { animation: boardSettle .42s cubic-bezier(.2,.85,.25,1); }
+body[data-feedback="column"] .table { animation: tableCelebrate .5s cubic-bezier(.2,.85,.25,1); }
 
 .bottom-dock {
   min-height: 60px;
@@ -549,6 +562,24 @@ main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 @keyframes selectablePulse {
   0%, 100% { box-shadow: 0 2px 0 #1029234a, 0 7px 14px #092d286b, 0 0 0 0 #e2aa4b10; }
   50% { box-shadow: 0 2px 0 #1029234a, 0 8px 17px #092d2875, 0 0 0 5px #e2aa4b28; }
+}
+@keyframes pileReady {
+  0%,100% { filter: brightness(1); box-shadow: 0 0 0 2px #f3d28255, 0 8px 17px #092d2875, inset 0 0 0 1px #283e3833; }
+  50% { filter: brightness(1.1); box-shadow: 0 0 0 4px #f3d28265, 0 9px 19px #092d2885, inset 0 0 0 1px #283e3833; }
+}
+@keyframes pileDraw {
+  0% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-9px) scale(1.04) rotate(-1deg); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes boardSettle {
+  0% { transform: translateY(0) scale(1); filter: brightness(1); }
+  45% { transform: translateY(-5px) scale(1.018); filter: brightness(1.1); }
+  100% { transform: translateY(0) scale(1); filter: brightness(1); }
+}
+@keyframes tableCelebrate {
+  0%,100% { filter: saturate(1) brightness(1); }
+  45% { filter: saturate(1.22) brightness(1.16); }
 }
 @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes cardIn { from { opacity: 0; transform: translateY(-8px) rotate(-3deg) scale(.92); } to { opacity: 1; transform: none; } }
