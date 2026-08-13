@@ -4,7 +4,7 @@
 Installierbares, touchoptimiertes Zahlen-Kartenspiel für iPhone mit 1–3 Computergegnern und lokalem Mehrspieler.
 
 ## Status
-Version 0.3.1 ist als Mobile-first-Premium-Redesign fertig getestet und für GitHub Pages bereit.
+Version 0.3.1 ist als Mobile-first-Premium-Redesign getestet und über GitHub Pages veröffentlicht.
 
 ## Befehle
 - Tests: `npm test`
