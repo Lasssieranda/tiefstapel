@@ -1,7 +1,8 @@
 import {
   createGame, startRound, revealInitialCard, drawFromDiscard, drawFromDeck, swapDrawnCard,
-  discardDrawnAndReveal, chooseBotAction, chooseBotDeckResolution
-} from './engine.js?v=201';
+  discardDrawnAndReveal, chooseBotAction, chooseBotMandatorySwap, chooseBotDeckResolution,
+  createSavedGame, restoreSavedGame
+} from './engine.js?v=300';
 
 const $ = id => document.getElementById(id);
 const els = {
@@ -9,7 +10,8 @@ const els = {
   setupError:$('setup-error'), continueBtn:$('continue-btn'), scorebar:$('scorebar'), opponents:$('opponents'), board:$('board'),
   deck:$('deck-pile'), discard:$('discard-pile'), deckCount:$('deck-count'), discardValue:$('discard-value'),
   roundLabel:$('round-label'), turnLabel:$('turn-label'), instruction:$('instruction'), drawnPanel:$('drawn-panel'),
-  drawnCard:$('drawn-card'), discardDrawn:$('discard-drawn'), status:$('status-pill'), result:$('result-modal'), resultContent:$('result-content'), toast:$('toast')
+  drawnCard:$('drawn-card'), discardDrawn:$('discard-drawn'), status:$('status-pill'), soundLabel:$('sound-label'),
+  result:$('result-modal'), resultContent:$('result-content'), toast:$('toast')
 };
 let game = null;
 let revealMode = false;
@@ -17,6 +19,7 @@ let botTimer = null;
 let deferredInstallPrompt = null;
 let soundOn = localStorage.getItem('tiefstapel-sound') !== 'off';
 let audioContext = null;
+const BOT_PHASES = ['initial-reveal','choose-pile','must-swap','deck-choice'];
 
 function valueClass(value){ return value <= 0 ? 'value-blue' : value <= 4 ? 'value-green' : value <= 8 ? 'value-yellow' : 'value-red'; }
 function isHumanTurn(){ return game && game.players[game.currentPlayer]?.type === 'human'; }
@@ -42,27 +45,36 @@ function toast(message){ els.toast.textContent=message; els.toast.classList.add(
 
 function save(){
   if(!game) return;
-  const copy={...game,rng:undefined};
-  localStorage.setItem('tiefstapel-save',JSON.stringify(copy));
+  localStorage.setItem('tiefstapel-save',JSON.stringify(createSavedGame(game)));
   els.continueBtn.classList.remove('hidden');
 }
 function load(){
   try{
     const data=JSON.parse(localStorage.getItem('tiefstapel-save'));
-    if(!data?.players?.length) return false;
-    game={...data,rng:Math.random}; revealMode=false; return true;
-  }catch{return false;}
+    game=restoreSavedGame(data); revealMode=false; els.setupError.textContent=''; return true;
+  }catch{
+    localStorage.removeItem('tiefstapel-save');
+    els.continueBtn.classList.add('hidden');
+    els.setupError.textContent='Der gespeicherte Spielstand war ungültig und wurde entfernt.';
+    return false;
+  }
 }
 
 function cardMarkup(card,index,mini=false){
-  if(card.removed) return `<button class="${mini?'mini-card':'card'} removed" data-index="${index}" disabled></button>`;
-  if(!card.revealed) return `<button class="${mini?'mini-card':'card'} back" data-index="${index}" aria-label="Verdeckte Karte"></button>`;
-  return `<button class="${mini?'mini-card open':'card '+valueClass(card.value)}" data-index="${index}" data-value="${card.value}" aria-label="Karte ${card.value}">${card.value}</button>`;
+  if(mini){
+    if(card.removed) return '<span class="mini-card removed" aria-hidden="true"></span>';
+    if(!card.revealed) return '<span class="mini-card back" aria-hidden="true"></span>';
+    return `<span class="mini-card open" aria-hidden="true">${card.value}</span>`;
+  }
+  if(card.removed) return `<button type="button" class="card removed" data-index="${index}" aria-label="Kartenposition ${index+1} entfernt" disabled></button>`;
+  if(!card.revealed) return `<button type="button" class="card back" data-index="${index}" aria-label="Verdeckte Karte ${index+1}"><span class="card-back-mark" aria-hidden="true">▼</span></button>`;
+  return `<button type="button" class="card ${valueClass(card.value)}" data-index="${index}" data-value="${card.value}" aria-label="Karte ${index+1}: Wert ${card.value}"><span class="card-value">${card.value}</span></button>`;
 }
 
 function render(){
   if(!game) return;
   const current=game.players[game.currentPlayer];
+  document.body.dataset.phase=game.phase;
   els.roundLabel.textContent=`Runde ${game.round}`;
   els.turnLabel.textContent=game.phase==='round-over'?'Runde beendet':game.phase==='game-over'?'Spiel beendet':game.phase==='initial-reveal'?`${current.name} deckt Startkarten auf`:`${current.name} ist dran`;
   els.deckCount.textContent=game.deck.length;
@@ -70,13 +82,19 @@ function render(){
   els.discardValue.textContent=top ?? '–';
   els.discard.className=`pile card ${valueClass(top ?? 0)}`;
   els.discard.dataset.value=top ?? '–';
-  els.scorebar.innerHTML=game.players.map((p,i)=>`<div class="score-chip ${i===game.currentPlayer?'active':''}"><span>${esc(p.name)}</span><b>${p.total}</b></div>`).join('');
-  els.opponents.innerHTML=game.players.map((p,i)=>({p,i})).filter(x=>x.i!==game.currentPlayer).map(({p,i})=>`<div><div class="mini-player ${i===game.currentPlayer?'active':''}" title="${esc(p.name)}">${p.grid.map((c,j)=>cardMarkup(c,j,true)).join('')}</div></div>`).join('');
+  els.scorebar.innerHTML=game.players.map((p,i)=>`<div class="score-chip ${i===game.currentPlayer?'active':''}"><i class="player-dot" aria-hidden="true"></i><span class="score-meta"><span>${esc(p.name)}</span><small>${i===game.currentPlayer?'Am Zug':'Gesamt'}</small></span><b>${p.total}</b></div>`).join('');
+  els.opponents.innerHTML=game.players.map((p,i)=>({p,i})).filter(x=>x.i!==game.currentPlayer).map(({p})=>{
+    const hidden=hiddenCount(p), removed=p.grid.filter(card=>card.removed).length, open=liveCards(p).length-hidden;
+    return `<div class="opponent"><span class="opponent-name" aria-hidden="true">${esc(p.name)}</span><span class="opponent-summary sr-only">${esc(p.name)}: ${open} offen, ${hidden} verdeckt, ${removed} entfernt.</span><div class="mini-player" aria-hidden="true">${p.grid.map((c,j)=>cardMarkup(c,j,true)).join('')}</div></div>`;
+  }).join('');
   els.board.innerHTML=current.grid.map((c,i)=>cardMarkup(c,i)).join('');
-  els.board.classList.toggle('selecting',isHumanTurn()&&['initial-reveal','must-swap','deck-choice'].includes(game.phase));
+  const canSelect=isHumanTurn()&&['initial-reveal','must-swap','deck-choice'].includes(game.phase);
+  els.board.classList.toggle('selecting',canSelect);
+  els.board.classList.toggle('initial-select',canSelect&&game.phase==='initial-reveal');
+  els.board.classList.toggle('swap-select',canSelect&&(game.phase==='must-swap'||(game.phase==='deck-choice'&&!revealMode)));
   els.board.classList.toggle('reveal-mode',revealMode);
   els.drawnPanel.classList.toggle('hidden',game.drawnCard===null);
-  if(game.drawnCard!==null){ els.drawnCard.textContent=game.drawnCard; els.drawnCard.dataset.value=game.drawnCard; els.drawnCard.className=`card drawn ${valueClass(game.drawnCard)}`; }
+  if(game.drawnCard!==null){ els.drawnCard.innerHTML=`<span class="card-value">${game.drawnCard}</span>`; els.drawnCard.dataset.value=game.drawnCard; els.drawnCard.className=`card drawn ${valueClass(game.drawnCard)}`; }
   els.discardDrawn.classList.toggle('hidden',game.phase!=='deck-choice'||!isHumanTurn());
   els.discardDrawn.textContent=revealMode?'Verdeckte Karte antippen …':'Ablegen & Karte aufdecken';
   els.deck.disabled=!isHumanTurn()||game.phase!=='choose-pile';
@@ -87,6 +105,16 @@ function render(){
   if(game.phase==='choose-pile') els.instruction.textContent=isHumanTurn()?'Wähle Nachziehstapel oder Ablage.':'Computer denkt nach …';
   if(game.phase==='must-swap') els.instruction.textContent='Tippe auf eine Karte, um sie zu tauschen.';
   if(game.phase==='deck-choice') els.instruction.textContent=revealMode?'Tippe auf eine verdeckte Karte.':'Tausche – oder lege die Ziehkarte ab.';
+  const statusText={
+    'initial-reveal':'Startwahl', 'choose-pile':isHumanTurn()?'Ziehen':'CPU denkt',
+    'must-swap':'Tauschen', 'deck-choice':revealMode?'Aufdecken':'Entscheiden',
+    'round-over':'Wertung', 'game-over':'Endstand'
+  };
+  els.status.textContent=statusText[game.phase]||'Bereit';
+  const resultReady=['round-over','game-over'].includes(game.phase);
+  els.status.disabled=!resultReady;
+  els.status.setAttribute('aria-label',resultReady?'Wertung wieder öffnen':els.status.textContent);
+  els.status.classList.toggle('result-ready',resultReady);
   save();
   if(['round-over','game-over'].includes(game.phase)) showResult(); else scheduleBot();
 }
@@ -94,6 +122,7 @@ function render(){
 function startNewGame(){
   const humans=Number(els.humans.value), bots=Number(els.bots.value), total=humans+bots;
   if(total<2||total>4){ els.setupError.textContent='Bitte insgesamt 2 bis 4 Spieler wählen.'; return; }
+  els.setupError.textContent='';
   const players=[];
   for(let i=0;i<humans;i++) players.push({name:humans===1?'Du':`Spieler ${i+1}`,type:'human'});
   for(let i=0;i<bots;i++) players.push({name:`CPU ${i+1}`,type:'bot',difficulty:els.difficulty.value});
@@ -123,27 +152,28 @@ function announceColumns(logStart){
 
 function scheduleBot(){
   clearTimeout(botTimer);
-  if(!game||!['initial-reveal','choose-pile'].includes(game.phase)||game.players[game.currentPlayer].type!=='bot') return;
-  botTimer=setTimeout(runBotTurn,620);
+  if(!game||!BOT_PHASES.includes(game.phase)||game.players[game.currentPlayer].type!=='bot') return;
+  const delay={ 'initial-reveal':620, 'choose-pile':620, 'must-swap':420, 'deck-choice':520 }[game.phase];
+  botTimer=setTimeout(runBotTurn,delay);
 }
 function runBotTurn(){
-  if(!game||!['initial-reveal','choose-pile'].includes(game.phase)||game.players[game.currentPlayer].type!=='bot') return;
+  if(!game||!BOT_PHASES.includes(game.phase)||game.players[game.currentPlayer].type!=='bot') return;
   if(game.phase==='initial-reveal'){
     const index=game.players[game.currentPlayer].grid.findIndex(card=>!card.revealed&&!card.removed);
     revealInitialCard(game,index); tone('flip'); render(); return;
   }
-  const action=chooseBotAction(game), before=game.log.length;
-  if(action.pile==='discard'){
-    drawFromDiscard(game); render();
-    botTimer=setTimeout(()=>{ swapDrawnCard(game,action.index); announceColumns(before); render(); },420);
-  }else{
-    drawFromDeck(game); render();
-    botTimer=setTimeout(()=>{
-      const resolution=chooseBotDeckResolution(game);
-      resolution.mode==='swap'?swapDrawnCard(game,resolution.index):discardDrawnAndReveal(game,resolution.index);
-      announceColumns(before); render();
-    },520);
+  if(game.phase==='choose-pile'){
+    const action=chooseBotAction(game);
+    action.pile==='discard'?drawFromDiscard(game):drawFromDeck(game);
+    tone('flip'); render(); return;
   }
+  const before=game.log.length;
+  if(game.phase==='must-swap') swapDrawnCard(game,chooseBotMandatorySwap(game));
+  else {
+    const resolution=chooseBotDeckResolution(game);
+    resolution.mode==='swap'?swapDrawnCard(game,resolution.index):discardDrawnAndReveal(game,resolution.index);
+  }
+  announceColumns(before); render();
 }
 
 function showResult(){
@@ -151,7 +181,7 @@ function showResult(){
   const over=game.phase==='game-over';
   const title=over?'Spiel entschieden':`Runde ${game.round} beendet`;
   const winnerNames=game.winnerIds.map(id=>game.players.find(p=>p.id===id)?.name).join(' & ');
-  els.resultContent.innerHTML=`<p class="eyebrow">${over?'ENDSTAND':'WERTUNG'}</p><h2>${title}</h2>${over?`<p><b>${esc(winnerNames)}</b> gewinnt mit der niedrigsten Punktzahl.</p>`:'<p>Die Kartenwerte wurden zum Gesamtstand addiert.</p>'}<table class="result-table">${game.players.map(p=>`<tr><td>${esc(p.name)}</td><td>${p.roundScore>=0?'+':''}${p.roundScore}</td><td><b>${p.total}</b></td></tr>`).join('')}</table><button class="primary" id="result-action">${over?'Neues Spiel':'Nächste Runde'}</button><button class="ghost" data-close="result-modal">Punktestand ansehen</button>`;
+  els.resultContent.innerHTML=`<p class="eyebrow">${over?'ENDSTAND':'WERTUNG'}</p><h2 id="result-title">${title}</h2>${over?`<p><b>${esc(winnerNames)}</b> gewinnt mit der niedrigsten Punktzahl.</p>`:'<p>Die Kartenwerte wurden zum Gesamtstand addiert.</p>'}<table class="result-table">${game.players.map(p=>`<tr><td>${esc(p.name)}</td><td>${p.roundScore>=0?'+':''}${p.roundScore}</td><td><b>${p.total}</b></td></tr>`).join('')}</table><button type="button" class="primary" id="result-action">${over?'Neues Spiel':'Nächste Runde'}</button><button type="button" class="ghost" data-close="result-modal">Punktestand ansehen</button>`;
   els.result.showModal(); tone('finish');
   $('result-action').onclick=()=>{ els.result.close(); if(over){ els.setup.showModal(); }else{ startRound(game); render(); } };
   els.resultContent.querySelector('[data-close]').onclick=()=>els.result.close();
@@ -165,11 +195,13 @@ els.board.addEventListener('click',event=>{ const card=event.target.closest('[da
 els.discardDrawn.addEventListener('click',()=>{ revealMode=!revealMode; tone('tap'); render(); });
 $('rules-btn').onclick=()=>$('info-modal').showModal();
 $('menu-btn').onclick=()=>{ clearTimeout(botTimer); els.setup.showModal(); };
-$('sound-btn').onclick=()=>{ soundOn=!soundOn; localStorage.setItem('tiefstapel-sound',soundOn?'on':'off'); $('sound-btn').textContent=soundOn?'Ton an':'Ton aus'; tone('tap'); };
+$('sound-btn').onclick=()=>{ soundOn=!soundOn; localStorage.setItem('tiefstapel-sound',soundOn?'on':'off'); els.soundLabel.textContent=soundOn?'Ton an':'Ton aus'; $('sound-btn').setAttribute('aria-pressed',String(soundOn)); tone('tap'); };
+els.status.onclick=()=>{ if(game&&['round-over','game-over'].includes(game.phase)) showResult(); };
 document.addEventListener('click',event=>{ const id=event.target.dataset.close; if(id) $(id).close(); });
 window.addEventListener('beforeinstallprompt',event=>{ event.preventDefault(); deferredInstallPrompt=event; });
 $('install-btn').onclick=async()=>{ if(deferredInstallPrompt){ deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt=null; }else $('install-modal').showModal(); };
 if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
-$('sound-btn').textContent=soundOn?'Ton an':'Ton aus';
+els.soundLabel.textContent=soundOn?'Ton an':'Ton aus';
+$('sound-btn').setAttribute('aria-pressed',String(soundOn));
 if(localStorage.getItem('tiefstapel-save')) els.continueBtn.classList.remove('hidden');
 if(!els.setup.open) els.setup.showModal();

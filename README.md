@@ -7,10 +7,11 @@ Ein eigenständiges, touchoptimiertes Zahlen-Kartenspiel für 2 bis 4 Spieler.
 - 1–4 lokale menschliche Spieler
 - 0–3 Computergegner in drei Stärken
 - Regelgetreue 3×4-Auslage, Dreier-Spalten, Rundenwertung und 100-Punkte-Spielende
-- Lokale Speicherung laufender Partien
+- Versionierte, validierte lokale Speicherung laufender Partien
 - Sound und haptisches Feedback
 - Installierbare Offline-PWA für iPhone und andere moderne Browser
-- Helles klassisches Design mit grünem Filztisch, vier Kartenfarben und Eckzahlen
+- Hochwertiges Mobile-first-Design mit tiefgrünem Spieltisch, vier Kartenfarben und eigenständigen App-Icons
+- Benannte Dialoge, nummerierte Kartenansagen, Gegnerzusammenfassungen und verfügbarer Browser-Zoom
 
 ## Auf dem iPhone installieren
 
@@ -38,7 +39,7 @@ npm test
 npm run check
 ```
 
-Getestete mobile Viewports: 390×844 und 360×740 CSS-Pixel.
+Getestete mobile Zielgrößen: 390×844 und 360×740 CSS-Pixel. Zieh- und Tauschzustände wurden zusätzlich an 30 breakpoint-nahen Touch-Viewports geprüft.
 
 ## Rechte
 

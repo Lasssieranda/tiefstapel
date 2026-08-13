@@ -8,6 +8,16 @@ const text = async path => readFile(new URL(path, root), 'utf8');
 test('HTML enthält iPhone- und PWA-Metadaten sowie zentrale Spielbereiche', async () => {
   const html = await text('index.html');
   for (const token of ['viewport-fit=cover','apple-mobile-web-app-capable','manifest.webmanifest','id="board"','id="setup"','id="install-btn"']) assert.match(html, new RegExp(token));
+  assert.doesNotMatch(html, /user-scalable=no/);
+  for (const id of ['setup-title','rules-title','result-title','install-title']) assert.match(html, new RegExp(`aria-labelledby="${id}"`));
+});
+
+test('Mobile QA-Rahmen sind semantisch valide und benennen ihre Spielansicht', async () => {
+  for (const file of ['qa/mobile-360.html','qa/mobile-390.html']) {
+    const html = await text(file);
+    assert.match(html, /^<!DOCTYPE html>/);
+    assert.match(html, /<iframe[^>]+title="TIEFSTAPEL Spielansicht"/);
+  }
 });
 
 test('Manifest ist installierbar und deklariert beide Icons', async () => {
@@ -28,6 +38,10 @@ test('Mobile CSS nutzt sichere Bereiche und ausreichend große Touchziele', asyn
   assert.match(css, /100dvh/);
   assert.match(css, /safe-area-inset-bottom/);
   assert.match(css, /min-height:\s*48px/);
+  assert.match(css, /@media\s*\(max-height:\s*780px\)/);
+  assert.match(css, /@media\s*\(max-height:\s*850px\)/);
+  assert.match(css, /data-phase=["']deck-choice["']/);
+  assert.match(css, /data-phase=["']must-swap["']/);
   assert.match(css, /prefers-reduced-motion/);
 });
 
@@ -39,15 +53,45 @@ test('Icons sind echte, nicht-triviale PNG-Dateien', async () => {
   }
 });
 
-test('Klassisches helles Kartendesign hat vier Wertfarben und Eckzahlen', async () => {
+test('Eigenständiges Premium-Kartendesign hat klare Zustände, Wertfarben und Eckzahlen', async () => {
   const css = await text('styles.css');
   const app = await text('src/app.js');
   const sw = await text('sw.js');
   const html = await text('index.html');
-  for (const token of ['--paper:', '--felt:', '.value-blue', '.value-green', '.value-yellow', '.value-red', '.card[data-value]::before', '.card[data-value]::after']) {
-    assert.ok(css.includes(token), `CSS-Merkmal fehlt: ${token}`);
+  const manifest = JSON.parse(await text('manifest.webmanifest'));
+
+  for (const token of [
+    '--surface:', '--felt:', '--gold:', '.value-blue', '.value-green', '.value-yellow', '.value-red',
+    '.card[data-value]::before', '.card[data-value]::after', '#discard-pile::after', '.table::before', '@keyframes selectablePulse'
+  ]) assert.ok(css.includes(token), `CSS-Merkmal fehlt: ${token}`);
+
+  for (const token of ['setup-benefits', 'aria-live="polite"', 'opponent-name', 'opponent-summary']) {
+    assert.ok(html.includes(token) || app.includes(token), `UI-Merkmal fehlt: ${token}`);
   }
+  assert.match(html, /<button[^>]+id="status-pill"/);
+  assert.match(app, /els\.status\.onclick=.*showResult/);
+  assert.match(app, /'round-over':'Wertung'/);
+  assert.match(app, /'game-over':'Endstand'/);
+  assert.match(app, /Verdeckte Karte \$\{index\+1\}/);
+  assert.match(app, /Karte \$\{index\+1\}: Wert \$\{card\.value\}/);
+
   assert.match(app, /data-value=/);
-  assert.match(sw, /tiefstapel-v5/);
-  assert.match(html, /src\/app\.js\?v=201/);
+  assert.match(app, /swapDrawnCard/);
+  assert.match(app, /createSavedGame/);
+  assert.match(app, /restoreSavedGame/);
+  assert.match(app, /BOT_PHASES/);
+  assert.match(app, /chooseBotMandatorySwap/);
+  for (const phase of ['initial-reveal','choose-pile','must-swap','deck-choice']) assert.ok(app.includes(`'${phase}'`));
+  assert.match(app, /document\.body\.dataset\.phase/);
+  assert.match(app, /engine\.js\?v=300/);
+  assert.match(sw, /tiefstapel-v6/);
+  assert.match(sw, /src\/app\.js\?v=300/);
+  assert.match(sw, /manifest\.webmanifest\?v=300/);
+  assert.match(sw, /icons\/icon-192\.png\?v=300/);
+  assert.match(sw, /icons\/icon-512\.png\?v=300/);
+  assert.match(html, /src\/app\.js\?v=300/);
+  assert.match(html, /manifest\.webmanifest\?v=300/);
+  assert.match(html, /icons\/icon-192\.png\?v=300/);
+  assert.ok(manifest.icons.every(icon => icon.src.endsWith('?v=300')));
+  assert.equal(manifest.theme_color, '#163b34');
 });

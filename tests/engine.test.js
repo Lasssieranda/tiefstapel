@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {
   buildDeck, createGame, startRound, revealInitialCard, drawFromDiscard, drawFromDeck,
   swapDrawnCard, discardDrawnAndReveal, scoreRound, findCompleteColumns,
-  chooseBotAction, chooseBotDeckResolution
+  chooseBotAction, chooseBotDeckResolution, chooseBotMandatorySwap,
+  createSavedGame, restoreSavedGame, SAVE_VERSION
 } from '../src/engine.js';
 
 test('Deck enthält 150 Karten in der vorgesehenen Verteilung', () => {
@@ -67,6 +68,92 @@ test('Finisher verdoppelt nur einen positiven Rundenscore, wenn jemand gleichauf
   assert.deepEqual(result, [20, 8, 15]);
   assert.deepEqual(scoreRound([-1, -2], 0), [-1, -2]);
   assert.deepEqual(scoreRound([7, 9], 0), [7, 9]);
+});
+
+test('Gespeicherte Spielstände werden versioniert und streng validiert', () => {
+  const game = createGame([{name:'A',type:'human'},{name:'B',type:'bot'}], () => 0.42);
+  startRound(game);
+  const snapshot = JSON.parse(JSON.stringify({...game, rng:undefined}));
+  const restored = restoreSavedGame({version:SAVE_VERSION, game:snapshot}, () => 0.25);
+  assert.equal(restored.phase, 'initial-reveal');
+  assert.equal(restored.players.length, 2);
+  assert.equal(restored.rng(), 0.25);
+  assert.equal(restoreSavedGame(snapshot).phase, 'initial-reveal');
+
+  const altered = mutate => {
+    const copy = structuredClone(snapshot);
+    mutate(copy);
+    return {version:SAVE_VERSION, game:copy};
+  };
+  assert.throws(() => restoreSavedGame(altered(data => { data.players[0].grid[0].value = '<img src=x onerror=alert(1)>'; })));
+  assert.throws(() => restoreSavedGame(altered(data => { data.players[0].total = '12'; })));
+  assert.throws(() => restoreSavedGame(altered(data => { data.players[0].roundScore = '<img src=x onerror=alert(1)>'; })));
+  assert.throws(() => restoreSavedGame(altered(data => { data.drawnCard = '<img src=x onerror=alert(1)>'; })));
+  assert.throws(() => restoreSavedGame(altered(data => { data.phase = 'freie-phase'; })));
+  assert.throws(() => restoreSavedGame(altered(data => { data.players[0].grid.pop(); })));
+  assert.throws(() => restoreSavedGame(altered(data => {
+    data.initialReveals[0] = 2;
+    data.players[0].grid[0].revealed = true;
+    data.players[0].grid[1].revealed = true;
+  })));
+  const choosePileGame = createGame([{name:'A',type:'human'},{name:'B',type:'bot'}], () => 0.42);
+  startRound(choosePileGame);
+  while (choosePileGame.phase === 'initial-reveal') {
+    const index = choosePileGame.players[choosePileGame.currentPlayer].grid.findIndex(card => !card.revealed);
+    revealInitialCard(choosePileGame, index);
+  }
+  const unavailablePiles = createSavedGame(choosePileGame);
+  unavailablePiles.game.deck = [];
+  unavailablePiles.game.discard = [];
+  assert.throws(() => restoreSavedGame(unavailablePiles));
+  const missingDiscard = structuredClone(createSavedGame(choosePileGame));
+  missingDiscard.game.discard = [];
+  assert.throws(() => restoreSavedGame(missingDiscard));
+  const unrebuildableDeck = structuredClone(createSavedGame(choosePileGame));
+  unrebuildableDeck.game.deck = [];
+  unrebuildableDeck.game.discard = [unrebuildableDeck.game.discard.at(-1)];
+  assert.throws(() => restoreSavedGame(unrebuildableDeck));
+  const noActiveChoice = structuredClone(createSavedGame(choosePileGame));
+  noActiveChoice.game.players[noActiveChoice.game.currentPlayer].grid.forEach(card => { card.revealed = true; card.removed = true; });
+  assert.throws(() => restoreSavedGame(noActiveChoice));
+  const removedHidden = structuredClone(createSavedGame(choosePileGame));
+  removedHidden.game.players[0].grid[0].removed = true;
+  removedHidden.game.players[0].grid[0].revealed = false;
+  assert.throws(() => restoreSavedGame(removedHidden));
+  drawFromDiscard(choosePileGame);
+  choosePileGame.players[choosePileGame.currentPlayer].grid.forEach(card => { card.revealed = true; card.removed = true; });
+  assert.throws(() => restoreSavedGame(createSavedGame(choosePileGame)));
+  assert.throws(() => restoreSavedGame({version:SAVE_VERSION + 1, game:snapshot}));
+});
+
+test('Wiederhergestellte Bot-Zwischenphasen lassen sich regulär abschließen', () => {
+  const prepareBotTurn = () => {
+    const game = createGame([{name:'Du',type:'human'},{name:'CPU',type:'bot',difficulty:'normal'}], () => 0.42);
+    startRound(game);
+    for (const playerIndex of [0, 1]) for (const index of [0, 1]) revealInitialCard(game, index);
+    game.currentPlayer = 1;
+    game.phase = 'choose-pile';
+    return game;
+  };
+
+  const discardGame = prepareBotTurn();
+  drawFromDiscard(discardGame);
+  const restoredDiscard = restoreSavedGame(JSON.parse(JSON.stringify(createSavedGame(discardGame))), () => 0.42);
+  assert.equal(restoredDiscard.phase, 'must-swap');
+  swapDrawnCard(restoredDiscard, chooseBotMandatorySwap(restoredDiscard));
+  assert.equal(restoredDiscard.phase, 'choose-pile');
+  assert.equal(restoredDiscard.currentPlayer, 0);
+
+  const deckGame = prepareBotTurn();
+  drawFromDeck(deckGame);
+  const restoredDeck = restoreSavedGame(JSON.parse(JSON.stringify(createSavedGame(deckGame))), () => 0.42);
+  assert.equal(restoredDeck.phase, 'deck-choice');
+  const resolution = chooseBotDeckResolution(restoredDeck);
+  resolution.mode === 'swap'
+    ? swapDrawnCard(restoredDeck, resolution.index)
+    : discardDrawnAndReveal(restoredDeck, resolution.index);
+  assert.equal(restoredDeck.phase, 'choose-pile');
+  assert.equal(restoredDeck.currentPlayer, 0);
 });
 
 test('Vier Computer können ein vollständiges Spiel bis zum regulären Spielende austragen', () => {

@@ -1,5 +1,5 @@
-const CACHE = 'tiefstapel-v5';
-const SHELL = ['./','index.html','styles.css','src/app.js?v=201','src/engine.js?v=201','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png'];
+const CACHE = 'tiefstapel-v6';
+const SHELL = ['./','index.html','styles.css?v=300','src/app.js?v=300','src/engine.js?v=300','manifest.webmanifest?v=300','icons/icon-192.png?v=300','icons/icon-512.png?v=300'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting())));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', event => {
