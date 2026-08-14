@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.5 – 2026-08-14
+- Regelkonforme Daumen-Ziehgeste: erlaubte Tauschkarte nach oben zur Ablage ziehen; bei kurzer oder falscher Bewegung federt sie zurück.
+- Ablage wird nur beim gültigen Ziehen hervorgehoben; reduzierte Bewegungseinstellungen bleiben berücksichtigt.
+- App-Shell auf `?v=305`, Cache auf `tiefstapel-v11`.
+
 ## 0.3.4 – 2026-08-14
 - Gegner werden als klar lesbare 3×4-Minitische mit eigenen Kartenrückseiten, offenen Werten und sichtbaren Lücken für entfernte Karten dargestellt.
 - Aktiver Gegnertisch wird dezent hervorgehoben; auf dichten iPhone-Höhen bleibt das Raster kompakt und ohne Überlauf.

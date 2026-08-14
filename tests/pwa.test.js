@@ -78,7 +78,9 @@ test('Eigenständiges Premium-Kartendesign hat klare Zustände, Wertfarben und E
 
   assert.match(app, /data-value=/);
   assert.match(app, /opponent-table/);
-  for (const token of ['.opponent-table','.mini-card.back','.mini-card.open']) assert.ok(css.includes(token), `Gegnertisch-Stil fehlt: ${token}`);
+  assert.match(app, /pointerdown/);
+  assert.match(app, /canDragCard/);
+  for (const token of ['.card.dragging','body.dragging-card','#discard-stage']) assert.ok(css.includes(token), `Ziehgeste-Stil fehlt: ${token}`);
   assert.match(app, /swapDrawnCard/);
   assert.match(app, /createSavedGame/);
   assert.match(app, /restoreSavedGame/);
@@ -92,15 +94,15 @@ test('Eigenständiges Premium-Kartendesign hat klare Zustände, Wertfarben und E
   assert.match(app, /publicActions/);
   assert.match(app, /actionForSeat/);
   assert.match(app, /botHoldUntil/);
-  assert.match(app, /engine\.js\?v=304/);
-  assert.match(sw, /tiefstapel-v10/);
-  assert.match(sw, /src\/app\.js\?v=304/);
-  assert.match(sw, /manifest\.webmanifest\?v=304/);
-  assert.match(sw, /icons\/icon-192\.png\?v=304/);
-  assert.match(sw, /icons\/icon-512\.png\?v=304/);
-  assert.match(html, /src\/app\.js\?v=304/);
-  assert.match(html, /manifest\.webmanifest\?v=304/);
-  assert.match(html, /icons\/icon-192\.png\?v=304/);
-  assert.ok(manifest.icons.every(icon => icon.src.endsWith('?v=304')));
+  assert.match(app, /engine\.js\?v=305/);
+  assert.match(sw, /tiefstapel-v11/);
+  assert.match(sw, /src\/app\.js\?v=305/);
+  assert.match(sw, /manifest\.webmanifest\?v=305/);
+  assert.match(sw, /icons\/icon-192\.png\?v=305/);
+  assert.match(sw, /icons\/icon-512\.png\?v=305/);
+  assert.match(html, /src\/app\.js\?v=305/);
+  assert.match(html, /manifest\.webmanifest\?v=305/);
+  assert.match(html, /icons\/icon-192\.png\?v=305/);
+  assert.ok(manifest.icons.every(icon => icon.src.endsWith('?v=305')));
   assert.equal(manifest.theme_color, '#113e35');
 });
