@@ -36,7 +36,8 @@ test('Service Worker cached die vollständige App-Shell', async () => {
 test('Mobile CSS nutzt sichere Bereiche und ausreichend große Touchziele', async () => {
   const css = await text('styles.css');
   assert.match(css, /100dvh/);
-  assert.match(css, /safe-area-inset-bottom/);
+  assert.match(css, /html, body \{ height: 100%; margin: 0; overflow: hidden;/);
+  assert.match(css, /height: 100dvh;/);
   assert.match(css, /min-height:\s*48px/);
   assert.match(css, /@media\s*\(max-height:\s*780px\)/);
   assert.match(css, /@media\s*\(max-height:\s*850px\)/);
@@ -92,15 +93,15 @@ test('Eigenständiges Premium-Kartendesign hat klare Zustände, Wertfarben und E
   assert.match(app, /publicActions/);
   assert.match(app, /actionForSeat/);
   assert.match(app, /botHoldUntil/);
-  assert.match(app, /engine\.js\?v=308/);
-  assert.match(sw, /tiefstapel-v14/);
-  assert.match(sw, /src\/app\.js\?v=308/);
-  assert.match(sw, /manifest\.webmanifest\?v=308/);
-  assert.match(sw, /icons\/icon-192\.png\?v=308/);
-  assert.match(sw, /icons\/icon-512\.png\?v=308/);
-  assert.match(html, /src\/app\.js\?v=308/);
-  assert.match(html, /manifest\.webmanifest\?v=308/);
-  assert.match(html, /icons\/icon-192\.png\?v=308/);
-  assert.ok(manifest.icons.every(icon => icon.src.endsWith('?v=308')));
+  assert.match(app, /engine\.js\?v=309/);
+  assert.match(sw, /tiefstapel-v15/);
+  assert.match(sw, /src\/app\.js\?v=309/);
+  assert.match(sw, /manifest\.webmanifest\?v=309/);
+  assert.match(sw, /icons\/icon-192\.png\?v=309/);
+  assert.match(sw, /icons\/icon-512\.png\?v=309/);
+  assert.match(html, /src\/app\.js\?v=309/);
+  assert.match(html, /manifest\.webmanifest\?v=309/);
+  assert.match(html, /icons\/icon-192\.png\?v=309/);
+  assert.ok(manifest.icons.every(icon => icon.src.endsWith('?v=309')));
   assert.equal(manifest.theme_color, '#113e35');
 });

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.9 – 2026-08-14
+- Mobile Spielansicht als fester Vollbildbereich ohne vertikales Seitenscrollen.
+- App-Shell `?v=309`, Cache `tiefstapel-v15`.
+
 ## 0.3.8 – 2026-08-14
 - Alle nachträglich eingeführten Kartenbewegungs- und Ziehgesten wurden zurückgenommen.
 - Kartendesign, Farben und Bedienung sind wieder auf dem Stand vor diesen Änderungen; App-Shell `?v=308`, Cache `tiefstapel-v14`.
