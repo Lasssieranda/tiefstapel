@@ -622,16 +622,19 @@ body[data-feedback="column"] .table { animation: tableCelebrate .5s cubic-bezier
   .opponent-name { display:none; }
   .opponent-table, .mini-player, .opponents .opponent:only-child .opponent-table { grid-template-columns:repeat(4, 13px); gap:2px; padding:4px; }
   .mini-card, .opponents .opponent:only-child .mini-card { width:13px; height:18px; font-size:7px; }
-  body:is([data-phase="deck-choice"], [data-phase="must-swap"]) { --card-width: 57px; }
+  /* In Zugentscheidungen beansprucht die gezogene Karte zusätzlichen Platz.
+     Die komplette 3×4-Auslage bleibt deshalb auch mit Safari-Browserleisten
+     innerhalb des festen Spielbereichs sichtbar und antippbar. */
+  body:is([data-phase="deck-choice"], [data-phase="must-swap"]) { --card-width: 49px; }
   body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .topbar { min-height: 50px; }
   body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .score-chip { min-height: 41px; padding-top: 5px; padding-bottom: 5px; }
   body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .score-chip b { font-size: 17px; }
   body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .opponents { min-height: 42px; padding-bottom: 4px; }
   body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .opponent-name { display: none; }
   body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .mini-player { padding: 4px 6px; }
-  body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .table { padding: 7px 8px 9px; }
-  body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .turn-copy { min-height: 48px; }
-  body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .turn-copy strong { font-size: 18px; }
+  body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .table { padding: 5px 8px 7px; }
+  body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .turn-copy { min-height: 43px; }
+  body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .turn-copy strong { font-size: 17px; }
   body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .turn-copy span:last-child { font-size: 10px; }
   body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .piles { margin: 0 0 7px; }
   .turn-trail { margin-bottom: 6px; }
@@ -641,7 +644,7 @@ body[data-feedback="column"] .table { animation: tableCelebrate .5s cubic-bezier
   body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .pile { width: 55px; }
   body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .pile-caption { gap: 2px; max-width: calc(100% - 5px); padding-inline: 3px; font-size: 5.5px; letter-spacing: .035em; }
   body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .pile-caption b { font-size: 6px; }
-  body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .board { gap: 5px; }
+  body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .board { gap: 4px; }
   body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .bottom-dock { min-height: 51px; padding-top: 5px; }
   body:is([data-phase="deck-choice"], [data-phase="must-swap"]) .bottom-dock .secondary { min-height: 44px; }
 }

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.10 – 2026-08-14
+- Die 3×4-Kartenauslage bleibt in den engen Entscheidungszuständen „Tauschen“ und „Ablegen“ vollständig sichtbar und antippbar.
+- In diesen Zuständen werden Karten, Zwischenräume und Überschrift gezielt verdichtet, statt die untere Reihe durch die feste App-Shell abzuschneiden.
+- App-Shell `?v=310`, Cache `tiefstapel-v16`.
+
 ## 0.3.9 – 2026-08-14
 - Mobile Spielansicht als fester Vollbildbereich ohne vertikales Seitenscrollen.
 - App-Shell `?v=309`, Cache `tiefstapel-v15`.

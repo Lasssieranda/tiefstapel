@@ -43,6 +43,7 @@ test('Mobile CSS nutzt sichere Bereiche und ausreichend große Touchziele', asyn
   assert.match(css, /@media\s*\(max-height:\s*850px\)/);
   assert.match(css, /data-phase=["']deck-choice["']/);
   assert.match(css, /data-phase=["']must-swap["']/);
+  assert.match(css, /deck-choice[\s\S]*--card-width:\s*49px/);
   assert.match(css, /prefers-reduced-motion/);
 });
 
@@ -93,15 +94,15 @@ test('Eigenständiges Premium-Kartendesign hat klare Zustände, Wertfarben und E
   assert.match(app, /publicActions/);
   assert.match(app, /actionForSeat/);
   assert.match(app, /botHoldUntil/);
-  assert.match(app, /engine\.js\?v=309/);
-  assert.match(sw, /tiefstapel-v15/);
-  assert.match(sw, /src\/app\.js\?v=309/);
-  assert.match(sw, /manifest\.webmanifest\?v=309/);
-  assert.match(sw, /icons\/icon-192\.png\?v=309/);
-  assert.match(sw, /icons\/icon-512\.png\?v=309/);
-  assert.match(html, /src\/app\.js\?v=309/);
-  assert.match(html, /manifest\.webmanifest\?v=309/);
-  assert.match(html, /icons\/icon-192\.png\?v=309/);
-  assert.ok(manifest.icons.every(icon => icon.src.endsWith('?v=309')));
+  assert.match(app, /engine\.js\?v=310/);
+  assert.match(sw, /tiefstapel-v16/);
+  assert.match(sw, /src\/app\.js\?v=310/);
+  assert.match(sw, /manifest\.webmanifest\?v=310/);
+  assert.match(sw, /icons\/icon-192\.png\?v=310/);
+  assert.match(sw, /icons\/icon-512\.png\?v=310/);
+  assert.match(html, /src\/app\.js\?v=310/);
+  assert.match(html, /manifest\.webmanifest\?v=310/);
+  assert.match(html, /icons\/icon-192\.png\?v=310/);
+  assert.ok(manifest.icons.every(icon => icon.src.endsWith('?v=310')));
   assert.equal(manifest.theme_color, '#113e35');
 });
