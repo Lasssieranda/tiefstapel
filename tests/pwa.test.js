@@ -63,10 +63,10 @@ test('Eigenständiges Premium-Kartendesign hat klare Zustände, Wertfarben und E
   for (const token of [
     '--surface:', '--felt:', '--gold:', '.value-blue', '.value-green', '.value-yellow', '.value-red',
     '.card[data-value]::before', '.card[data-value]::after', '#discard-pile::after', '.table::before', '@keyframes selectablePulse',
-    '.turn-token', '.discard-stage', '.last-action', '@keyframes pileReady', '@keyframes pileDraw', '@keyframes discardLand', '@keyframes boardSettle'
+    '.turn-token', '.discard-stage', '.turn-trail', '.turn-lane-self', '.turn-lane-other', '@keyframes pileReady', '@keyframes pileDraw', '@keyframes discardLand', '@keyframes boardSettle'
   ]) assert.ok(css.includes(token), `CSS-Merkmal fehlt: ${token}`);
 
-  for (const token of ['setup-benefits', 'aria-live="polite"', 'opponent-name', 'opponent-summary', 'id="turn-token"', 'id="discard-stage"', 'id="last-action"', 'id="handoff-modal"']) {
+  for (const token of ['setup-benefits', 'aria-live="polite"', 'opponent-name', 'opponent-summary', 'id="turn-token"', 'id="discard-stage"', 'id="turn-trail"', 'id="self-action"', 'id="other-action"', 'id="handoff-modal"']) {
     assert.ok(html.includes(token) || app.includes(token), `UI-Merkmal fehlt: ${token}`);
   }
   assert.match(html, /<button[^>]+id="status-pill"/);
@@ -87,16 +87,18 @@ test('Eigenständiges Premium-Kartendesign hat klare Zustände, Wertfarben und E
   assert.match(app, /pulseBoard/);
   assert.match(app, /viewerPlayerIndex/);
   assert.match(app, /lastPublicAction/);
+  assert.match(app, /publicActions/);
+  assert.match(app, /actionForSeat/);
   assert.match(app, /botHoldUntil/);
-  assert.match(app, /engine\.js\?v=302/);
-  assert.match(sw, /tiefstapel-v8/);
-  assert.match(sw, /src\/app\.js\?v=302/);
-  assert.match(sw, /manifest\.webmanifest\?v=302/);
-  assert.match(sw, /icons\/icon-192\.png\?v=302/);
-  assert.match(sw, /icons\/icon-512\.png\?v=302/);
-  assert.match(html, /src\/app\.js\?v=302/);
-  assert.match(html, /manifest\.webmanifest\?v=302/);
-  assert.match(html, /icons\/icon-192\.png\?v=302/);
-  assert.ok(manifest.icons.every(icon => icon.src.endsWith('?v=302')));
+  assert.match(app, /engine\.js\?v=303/);
+  assert.match(sw, /tiefstapel-v9/);
+  assert.match(sw, /src\/app\.js\?v=303/);
+  assert.match(sw, /manifest\.webmanifest\?v=303/);
+  assert.match(sw, /icons\/icon-192\.png\?v=303/);
+  assert.match(sw, /icons\/icon-512\.png\?v=303/);
+  assert.match(html, /src\/app\.js\?v=303/);
+  assert.match(html, /manifest\.webmanifest\?v=303/);
+  assert.match(html, /icons\/icon-192\.png\?v=303/);
+  assert.ok(manifest.icons.every(icon => icon.src.endsWith('?v=303')));
   assert.equal(manifest.theme_color, '#113e35');
 });

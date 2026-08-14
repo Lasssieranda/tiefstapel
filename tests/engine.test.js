@@ -75,6 +75,7 @@ test('Öffentliche Aktionen dokumentieren nur die sichtbare Ablagekarte', () => 
   startRound(game);
   for (const playerIndex of [0, 1]) for (const index of [0, 1]) revealInitialCard(game, index);
   const visible = game.discard.at(-1);
+  const acting = game.currentPlayer;
   drawFromDiscard(game);
   assert.deepEqual(game.lastPublicAction, { type:'take-discard', actorIndex:game.currentPlayer, cardValue:visible, sequence:1 });
   const discarded = game.players[game.currentPlayer].grid[0].value;
@@ -82,8 +83,13 @@ test('Öffentliche Aktionen dokumentieren nur die sichtbare Ablagekarte', () => 
   assert.equal(game.lastPublicAction.type, 'swap');
   assert.equal(game.lastPublicAction.cardValue, discarded);
   assert.equal(game.discard.at(-1), discarded);
+  assert.deepEqual(game.publicActions.slice(-2), [
+    { type:'take-discard', actorIndex:acting, cardValue:visible, sequence:1 },
+    { type:'swap', actorIndex:acting, cardValue:discarded, sequence:2 }
+  ]);
   const restored = restoreSavedGame(structuredClone(createSavedGame(game)), () => 0.5);
   assert.deepEqual(restored.lastPublicAction, game.lastPublicAction);
+  assert.deepEqual(restored.publicActions, game.publicActions);
 });
 
 test('Gespeicherte Spielstände werden versioniert und streng validiert', () => {

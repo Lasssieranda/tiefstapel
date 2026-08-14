@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.3 – 2026-08-14
+- Neue zweigeteilte Zugspur: „Dein letzter Zug“ und „Letzter Gegnerzug“ bleiben parallel sichtbar.
+- Die Zugspur speichert nur sichere öffentliche Aktionen und bleibt nach Offline-Neustart erhalten.
+- Kompakter iPhone-Layoutmodus hält die neue Übersicht bei 390×844 und 360×740 ohne Überlauf lesbar.
+- App-Shell auf `?v=303`, Offline-Cache auf `tiefstapel-v9`.
+
 ## 0.3.2 – 2026-08-14
 - Festes eigenes 3×4-Spielbrett: Bot-Züge aktualisieren nur Gegner-Miniaturen, Punktestand und Ablage; fremde Karten werden nicht mehr groß eingeblendet.
 - Zentraler Ablagestapel mit sichtbarer Stapeltiefe und dauerhaftem, öffentlichem Zugbeleg wie „Du legt 10 ab“.

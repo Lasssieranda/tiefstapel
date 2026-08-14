@@ -2,13 +2,13 @@ import {
   createGame, startRound, revealInitialCard, drawFromDiscard, drawFromDeck, swapDrawnCard,
   discardDrawnAndReveal, chooseBotAction, chooseBotMandatorySwap, chooseBotDeckResolution,
   createSavedGame, restoreSavedGame
-} from './engine.js?v=302';
+} from './engine.js?v=303';
 
 const $ = id => document.getElementById(id);
 const els = {
   setup:$('setup'), setupForm:$('setup-form'), humans:$('human-count'), bots:$('bot-count'), difficulty:$('difficulty'),
   setupError:$('setup-error'), continueBtn:$('continue-btn'), scorebar:$('scorebar'), opponents:$('opponents'), board:$('board'),
-  deck:$('deck-pile'), discard:$('discard-pile'), discardStage:$('discard-stage'), deckCount:$('deck-count'), discardValue:$('discard-value'), lastAction:$('last-action'),
+  deck:$('deck-pile'), discard:$('discard-pile'), discardStage:$('discard-stage'), deckCount:$('deck-count'), discardValue:$('discard-value'), selfAction:$('self-action'), otherAction:$('other-action'),
   roundLabel:$('round-label'), turnLabel:$('turn-label'), turnToken:$('turn-token'), instruction:$('instruction'), drawnPanel:$('drawn-panel'),
   drawnCard:$('drawn-card'), discardDrawn:$('discard-drawn'), status:$('status-pill'), soundLabel:$('sound-label'),
   result:$('result-modal'), resultContent:$('result-content'), toast:$('toast')
@@ -41,6 +41,11 @@ function lastActionCopy(action){
   if(action.type==='discard-and-reveal') return `${actor} legt ${action.cardValue} ab und deckt auf.`;
   if(action.type==='clear-column') return `${actor} räumt eine Dreier-Spalte ab.`;
   return 'Die offene Karte bleibt hier sichtbar.';
+}
+function actionForSeat(seat, own){
+  const actions=(game.publicActions?.length ? game.publicActions : [game.lastPublicAction]).filter(Boolean);
+  const action=[...actions].reverse().find(item => item.actorIndex !== null && (own ? item.actorIndex===seat : item.actorIndex!==seat));
+  return action ? lastActionCopy(action) : own ? 'Du hast in dieser Runde noch keine öffentliche Aktion.' : 'Noch keine öffentliche Aktion der anderen Spieler.';
 }
 function shouldHandoff(){ return game && game.players.filter(player=>player.type==='human').length > 1 && isHumanTurn() && game.currentPlayer !== viewerPlayerIndex && !['round-over','game-over'].includes(game.phase); }
 function liveCards(player){ return player.grid.filter(card => !card.removed); }
@@ -115,7 +120,8 @@ function render(){
   els.discard.className=`pile card ${valueClass(top ?? 0)}`;
   els.discard.dataset.value=top ?? '–';
   els.discard.setAttribute('aria-label',`Ablagestapel, oberste Karte ${top ?? 'unbekannt'}${isViewerTurn()&&game.phase==='choose-pile' ? '. Zum Tauschen nehmen.' : '.'}`);
-  els.lastAction.innerHTML=`<span class="last-action-kicker">LETZTE AKTION</span><strong>${esc(lastActionCopy(game.lastPublicAction))}</strong>`;
+  els.selfAction.textContent=actionForSeat(viewerPlayerIndex,true);
+  els.otherAction.textContent=actionForSeat(viewerPlayerIndex,false);
   els.scorebar.innerHTML=game.players.map((p,i)=>`<div class="score-chip ${i===game.currentPlayer?'active':''}"><i class="player-dot" aria-hidden="true"></i><span class="score-meta"><span>${esc(p.name)}</span><small>${i===game.currentPlayer?'Am Zug':'Gesamt'}</small></span><b>${p.total}</b></div>`).join('');
   els.opponents.innerHTML=game.players.map((p,i)=>({p,i})).filter(x=>x.i!==viewerPlayerIndex).map(({p,i})=>{
     const hidden=hiddenCount(p), removed=p.grid.filter(card=>card.removed).length, open=liveCards(p).length-hidden;
