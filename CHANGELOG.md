@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.6 – 2026-08-14
+- Die gezogene Karte wird direkt mit dem Daumen auf eine eigene Zielkarte gezogen; beim Loslassen wird exakt dieser Tausch ausgeführt.
+- Zielkarte und Ablage markieren den Tausch sichtbar, Abbruch federt die Ziehkarte zurück.
+
 ## 0.3.5 – 2026-08-14
 - Regelkonforme Daumen-Ziehgeste: erlaubte Tauschkarte nach oben zur Ablage ziehen; bei kurzer oder falscher Bewegung federt sie zurück.
 - Ablage wird nur beim gültigen Ziehen hervorgehoben; reduzierte Bewegungseinstellungen bleiben berücksichtigt.
