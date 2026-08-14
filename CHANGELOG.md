@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.4 – 2026-08-14
+- Gegner werden als klar lesbare 3×4-Minitische mit eigenen Kartenrückseiten, offenen Werten und sichtbaren Lücken für entfernte Karten dargestellt.
+- Aktiver Gegnertisch wird dezent hervorgehoben; auf dichten iPhone-Höhen bleibt das Raster kompakt und ohne Überlauf.
+- App-Shell auf `?v=304`, Cache auf `tiefstapel-v10`.
+
 ## 0.3.3 – 2026-08-14
 - Neue zweigeteilte Zugspur: „Dein letzter Zug“ und „Letzter Gegnerzug“ bleiben parallel sichtbar.
 - Die Zugspur speichert nur sichere öffentliche Aktionen und bleibt nach Offline-Neustart erhalten.
