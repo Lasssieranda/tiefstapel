@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TIEFSTAPEL">
   <meta name="description" content="Das taktische Zahlen-Kartenspiel für 2 bis 4 Spieler.">
-  <link rel="manifest" href="manifest.webmanifest?v=301">
-  <link rel="apple-touch-icon" href="icons/icon-192.png?v=301">
-  <link rel="icon" href="icons/icon-192.png?v=301">
-  <link rel="stylesheet" href="styles.css?v=301">
+  <link rel="manifest" href="manifest.webmanifest?v=302">
+  <link rel="apple-touch-icon" href="icons/icon-192.png?v=302">
+  <link rel="icon" href="icons/icon-192.png?v=302">
+  <link rel="stylesheet" href="styles.css?v=302">
   <title>TIEFSTAPEL</title>
 </head>
 <body>
@@ -45,8 +45,12 @@
           <button type="button" id="deck-pile" class="pile deck" aria-label="Vom Nachziehstapel ziehen">
             <span class="back-pattern">▼</span><span class="pile-caption"><span>Stapel</span><b id="deck-count">150</b></span>
           </button>
-          <button type="button" id="discard-pile" class="pile card value-blue" data-value="–" aria-label="Offene Karte nehmen"><span id="discard-value" class="card-value">–</span><span class="pile-caption">Ablage</span></button>
+          <section id="discard-stage" class="discard-stage" aria-label="Ablagestapel">
+            <span class="discard-shadow discard-shadow-one" aria-hidden="true"></span><span class="discard-shadow discard-shadow-two" aria-hidden="true"></span>
+            <button type="button" id="discard-pile" class="pile card value-blue" data-value="–" aria-label="Ablagestapel, oberste Karte unbekannt"><span id="discard-value" class="card-value">–</span><span class="pile-caption">Ablage</span></button>
+          </section>
         </div>
+        <div id="last-action" class="last-action" role="status" aria-live="polite"><span class="last-action-kicker">LETZTE ABLAGE</span><strong>Die offene Karte bleibt hier sichtbar.</strong></div>
 
         <div id="drawn-panel" class="drawn-panel hidden">
           <span class="drawn-copy"><span>Gezogen</span><small>Deine Wahl</small></span><div id="drawn-card" class="card drawn"><span class="card-value">0</span></div>
@@ -100,7 +104,8 @@
 
   <dialog id="result-modal" class="modal" aria-labelledby="result-title"><article class="modal-card result-card" id="result-content"></article></dialog>
   <dialog id="install-modal" class="modal" aria-labelledby="install-title"><article class="modal-card"><button type="button" class="close" data-close="install-modal" aria-label="Schließen">×</button><p class="eyebrow">AUF DEM IPHONE</p><h2 id="install-title">Als App installieren</h2><p>Öffne diese Seite in Safari, tippe auf <b>Teilen</b> und danach auf <b>„Zum Home-Bildschirm“</b>.</p><button type="button" class="primary" data-close="install-modal">Verstanden</button></article></dialog>
+  <dialog id="handoff-modal" class="modal" aria-labelledby="handoff-title"><article class="modal-card handoff-card"><p class="eyebrow">ZUGWECHSEL</p><h2 id="handoff-title">Gerät weitergeben</h2><p id="handoff-copy">Gib das Gerät an den nächsten Spieler.</p><button type="button" id="handoff-ready" class="primary">Ich bin bereit</button></article></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="src/app.js?v=301"></script>
+  <script type="module" src="src/app.js?v=302"></script>
 </body>
 </html>

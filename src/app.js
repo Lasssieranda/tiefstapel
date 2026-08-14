@@ -2,20 +2,23 @@ import {
   createGame, startRound, revealInitialCard, drawFromDiscard, drawFromDeck, swapDrawnCard,
   discardDrawnAndReveal, chooseBotAction, chooseBotMandatorySwap, chooseBotDeckResolution,
   createSavedGame, restoreSavedGame
-} from './engine.js?v=301';
+} from './engine.js?v=302';
 
 const $ = id => document.getElementById(id);
 const els = {
   setup:$('setup'), setupForm:$('setup-form'), humans:$('human-count'), bots:$('bot-count'), difficulty:$('difficulty'),
   setupError:$('setup-error'), continueBtn:$('continue-btn'), scorebar:$('scorebar'), opponents:$('opponents'), board:$('board'),
-  deck:$('deck-pile'), discard:$('discard-pile'), deckCount:$('deck-count'), discardValue:$('discard-value'),
+  deck:$('deck-pile'), discard:$('discard-pile'), discardStage:$('discard-stage'), deckCount:$('deck-count'), discardValue:$('discard-value'), lastAction:$('last-action'),
   roundLabel:$('round-label'), turnLabel:$('turn-label'), turnToken:$('turn-token'), instruction:$('instruction'), drawnPanel:$('drawn-panel'),
   drawnCard:$('drawn-card'), discardDrawn:$('discard-drawn'), status:$('status-pill'), soundLabel:$('sound-label'),
   result:$('result-modal'), resultContent:$('result-content'), toast:$('toast')
 };
 let game = null;
+let viewerPlayerIndex = 0;
+let handoffPlayerIndex = null;
 let revealMode = false;
 let botTimer = null;
+let botHoldUntil = 0;
 let deferredInstallPrompt = null;
 let soundOn = localStorage.getItem('tiefstapel-sound') !== 'off';
 let audioContext = null;
@@ -23,6 +26,23 @@ const BOT_PHASES = ['initial-reveal','choose-pile','must-swap','deck-choice'];
 
 function valueClass(value){ return value <= 0 ? 'value-blue' : value <= 4 ? 'value-green' : value <= 8 ? 'value-yellow' : 'value-red'; }
 function isHumanTurn(){ return game && game.players[game.currentPlayer]?.type === 'human'; }
+function isViewerTurn(){ return isHumanTurn() && game.currentPlayer === viewerPlayerIndex && handoffPlayerIndex === null; }
+function firstHumanIndex(){ return game?.players.findIndex(player=>player.type==='human') ?? 0; }
+function setViewer(index){
+  viewerPlayerIndex=index;
+  localStorage.setItem('tiefstapel-viewer',String(index));
+}
+function lastActionCopy(action){
+  const actor=action?.actorIndex === null || action?.actorIndex === undefined ? null : game.players[action.actorIndex]?.name;
+  if(!action) return 'Die offene Karte bleibt hier sichtbar.';
+  if(action.type==='round-start') return `Ablage startet mit ${action.cardValue}.`;
+  if(action.type==='take-discard') return `${actor} nimmt ${action.cardValue} von der Ablage.`;
+  if(action.type==='swap') return `${actor} legt ${action.cardValue} ab.`;
+  if(action.type==='discard-and-reveal') return `${actor} legt ${action.cardValue} ab und deckt auf.`;
+  if(action.type==='clear-column') return `${actor} räumt eine Dreier-Spalte ab.`;
+  return 'Die offene Karte bleibt hier sichtbar.';
+}
+function shouldHandoff(){ return game && game.players.filter(player=>player.type==='human').length > 1 && isHumanTurn() && game.currentPlayer !== viewerPlayerIndex && !['round-over','game-over'].includes(game.phase); }
 function liveCards(player){ return player.grid.filter(card => !card.removed); }
 function hiddenCount(player){ return liveCards(player).filter(card => !card.revealed).length; }
 function esc(text){ const d=document.createElement('div'); d.textContent=text; return d.innerHTML; }
@@ -56,7 +76,10 @@ function save(){
 function load(){
   try{
     const data=JSON.parse(localStorage.getItem('tiefstapel-save'));
-    game=restoreSavedGame(data); revealMode=false; els.setupError.textContent=''; return true;
+    game=restoreSavedGame(data);
+    const savedViewer=Number(localStorage.getItem('tiefstapel-viewer'));
+    setViewer(Number.isInteger(savedViewer) && game.players[savedViewer]?.type==='human' ? savedViewer : firstHumanIndex());
+    handoffPlayerIndex=null; revealMode=false; els.setupError.textContent=''; return true;
   }catch{
     localStorage.removeItem('tiefstapel-save');
     els.continueBtn.classList.add('hidden');
@@ -80,6 +103,7 @@ function render(){
   if(!game) return;
   const current=game.players[game.currentPlayer];
   document.body.dataset.phase=game.phase;
+  document.body.dataset.viewer=String(viewerPlayerIndex);
   const activeLabel=game.phase==='round-over' ? 'Runde beendet' : game.phase==='game-over' ? 'Endstand' : current.name;
   els.turnToken.querySelector('span').textContent=activeLabel;
   els.turnToken.classList.toggle('is-human',isHumanTurn() && !['round-over','game-over'].includes(game.phase));
@@ -90,27 +114,30 @@ function render(){
   els.discardValue.textContent=top ?? '–';
   els.discard.className=`pile card ${valueClass(top ?? 0)}`;
   els.discard.dataset.value=top ?? '–';
+  els.discard.setAttribute('aria-label',`Ablagestapel, oberste Karte ${top ?? 'unbekannt'}${isViewerTurn()&&game.phase==='choose-pile' ? '. Zum Tauschen nehmen.' : '.'}`);
+  els.lastAction.innerHTML=`<span class="last-action-kicker">LETZTE AKTION</span><strong>${esc(lastActionCopy(game.lastPublicAction))}</strong>`;
   els.scorebar.innerHTML=game.players.map((p,i)=>`<div class="score-chip ${i===game.currentPlayer?'active':''}"><i class="player-dot" aria-hidden="true"></i><span class="score-meta"><span>${esc(p.name)}</span><small>${i===game.currentPlayer?'Am Zug':'Gesamt'}</small></span><b>${p.total}</b></div>`).join('');
-  els.opponents.innerHTML=game.players.map((p,i)=>({p,i})).filter(x=>x.i!==game.currentPlayer).map(({p})=>{
+  els.opponents.innerHTML=game.players.map((p,i)=>({p,i})).filter(x=>x.i!==viewerPlayerIndex).map(({p,i})=>{
     const hidden=hiddenCount(p), removed=p.grid.filter(card=>card.removed).length, open=liveCards(p).length-hidden;
-    return `<div class="opponent"><span class="opponent-name" aria-hidden="true">${esc(p.name)}</span><span class="opponent-summary sr-only">${esc(p.name)}: ${open} offen, ${hidden} verdeckt, ${removed} entfernt.</span><div class="mini-player" aria-hidden="true">${p.grid.map((c,j)=>cardMarkup(c,j,true)).join('')}</div></div>`;
+    return `<div class="opponent ${i===game.currentPlayer?'active':''}"><span class="opponent-name" aria-hidden="true">${esc(p.name)}${i===game.currentPlayer?' · am Zug':''}</span><span class="opponent-summary sr-only">${esc(p.name)}: ${open} offen, ${hidden} verdeckt, ${removed} entfernt${i===game.currentPlayer?', ist am Zug':''}.</span><div class="mini-player" aria-hidden="true">${p.grid.map((c,j)=>cardMarkup(c,j,true)).join('')}</div></div>`;
   }).join('');
-  els.board.innerHTML=current.grid.map((c,i)=>cardMarkup(c,i)).join('');
-  const canSelect=isHumanTurn()&&['initial-reveal','must-swap','deck-choice'].includes(game.phase);
+  const viewer=game.players[viewerPlayerIndex] || current;
+  els.board.innerHTML=viewer.grid.map((c,i)=>cardMarkup(c,i)).join('');
+  const canSelect=isViewerTurn()&&['initial-reveal','must-swap','deck-choice'].includes(game.phase);
   els.board.classList.toggle('selecting',canSelect);
   els.board.classList.toggle('initial-select',canSelect&&game.phase==='initial-reveal');
   els.board.classList.toggle('swap-select',canSelect&&(game.phase==='must-swap'||(game.phase==='deck-choice'&&!revealMode)));
   els.board.classList.toggle('reveal-mode',revealMode);
   els.drawnPanel.classList.toggle('hidden',game.drawnCard===null);
   if(game.drawnCard!==null){ els.drawnCard.innerHTML=`<span class="card-value">${game.drawnCard}</span>`; els.drawnCard.dataset.value=game.drawnCard; els.drawnCard.className=`card drawn ${valueClass(game.drawnCard)}`; }
-  els.discardDrawn.classList.toggle('hidden',game.phase!=='deck-choice'||!isHumanTurn());
+  els.discardDrawn.classList.toggle('hidden',game.phase!=='deck-choice'||!isViewerTurn());
   els.discardDrawn.textContent=revealMode?'Verdeckte Karte antippen …':'Ablegen & Karte aufdecken';
-  els.deck.disabled=!isHumanTurn()||game.phase!=='choose-pile';
+  els.deck.disabled=!isViewerTurn()||game.phase!=='choose-pile';
   const initialLeft=2-(game.initialReveals?.[game.currentPlayer]??0);
   els.discard.disabled=els.deck.disabled;
 
-  if(game.phase==='initial-reveal') els.instruction.textContent=isHumanTurn()?`Wähle deine ersten zwei Karten – noch ${initialLeft}.`:`${current.name} deckt zwei Startkarten auf …`;
-  if(game.phase==='choose-pile') els.instruction.textContent=isHumanTurn()?'Wähle Nachziehstapel oder Ablage.':'Computer denkt nach …';
+  if(game.phase==='initial-reveal') els.instruction.textContent=isViewerTurn()?`Wähle deine ersten zwei Karten – noch ${initialLeft}.`:`${current.name} deckt zwei Startkarten auf …`;
+  if(game.phase==='choose-pile') els.instruction.textContent=isViewerTurn()?'Wähle Nachziehstapel oder Ablage.':game.players[game.currentPlayer].type==='bot'?'Computer überlegt ruhig …':`${current.name} ist dran.`;
   if(game.phase==='must-swap') els.instruction.textContent='Tippe auf eine Karte, um sie zu tauschen.';
   if(game.phase==='deck-choice') els.instruction.textContent=revealMode?'Tippe auf eine verdeckte Karte.':'Tausche – oder lege die Ziehkarte ab.';
   const statusText={
@@ -124,7 +151,9 @@ function render(){
   els.status.setAttribute('aria-label',resultReady?'Wertung wieder öffnen':els.status.textContent);
   els.status.classList.toggle('result-ready',resultReady);
   save();
-  if(['round-over','game-over'].includes(game.phase)) showResult(); else scheduleBot();
+  if(['round-over','game-over'].includes(game.phase)) showResult();
+  else if(shouldHandoff()) openHandoff(game.currentPlayer);
+  else scheduleBot();
 }
 
 function startNewGame(){
@@ -134,15 +163,15 @@ function startNewGame(){
   const players=[];
   for(let i=0;i<humans;i++) players.push({name:humans===1?'Du':`Spieler ${i+1}`,type:'human'});
   for(let i=0;i<bots;i++) players.push({name:`CPU ${i+1}`,type:'bot',difficulty:els.difficulty.value});
-  game=createGame(players); startRound(game); revealMode=false; els.setup.close(); tone('finish'); render();
+  game=createGame(players); startRound(game); setViewer(0); handoffPlayerIndex=null; botHoldUntil=0; revealMode=false; els.setup.close(); tone('finish'); render();
 }
 
 function handlePile(source){
-  if(!isHumanTurn()||game.phase!=='choose-pile') return;
+  if(!isViewerTurn()||game.phase!=='choose-pile') return;
   revealMode=false; source==='deck'?drawFromDeck(game):drawFromDiscard(game); pulseBoard(source==='deck'?'draw':'take'); tone('flip'); haptic(); render();
 }
 function handleCard(index){
-  if(!isHumanTurn()||!game) return;
+  if(!isViewerTurn()||!game) return;
   try{
     if(game.phase==='initial-reveal'){
       revealInitialCard(game,index); pulseBoard('reveal'); tone('flip'); haptic();
@@ -160,20 +189,21 @@ function announceColumns(logStart){
 
 function scheduleBot(){
   clearTimeout(botTimer);
-  if(!game||!BOT_PHASES.includes(game.phase)||game.players[game.currentPlayer].type!=='bot') return;
-  const delay={ 'initial-reveal':620, 'choose-pile':620, 'must-swap':420, 'deck-choice':520 }[game.phase];
+  if(!game||!BOT_PHASES.includes(game.phase)||game.players[game.currentPlayer].type!=='bot'||handoffPlayerIndex!==null) return;
+  const baseDelay={ 'initial-reveal':900, 'choose-pile':900, 'must-swap':650, 'deck-choice':800 }[game.phase];
+  const delay=Math.max(baseDelay,botHoldUntil-Date.now());
   botTimer=setTimeout(runBotTurn,delay);
 }
 function runBotTurn(){
   if(!game||!BOT_PHASES.includes(game.phase)||game.players[game.currentPlayer].type!=='bot') return;
   if(game.phase==='initial-reveal'){
     const index=game.players[game.currentPlayer].grid.findIndex(card=>!card.revealed&&!card.removed);
-    revealInitialCard(game,index); tone('flip'); render(); return;
+    revealInitialCard(game,index); pulseBoard('reveal'); botHoldUntil=Date.now()+750; tone('flip'); render(); return;
   }
   if(game.phase==='choose-pile'){
     const action=chooseBotAction(game);
     action.pile==='discard'?drawFromDiscard(game):drawFromDeck(game);
-    tone('flip'); render(); return;
+    pulseBoard(action.pile==='discard'?'take':'draw'); botHoldUntil=Date.now()+850; tone('flip'); render(); return;
   }
   const before=game.log.length;
   if(game.phase==='must-swap') swapDrawnCard(game,chooseBotMandatorySwap(game));
@@ -181,7 +211,16 @@ function runBotTurn(){
     const resolution=chooseBotDeckResolution(game);
     resolution.mode==='swap'?swapDrawnCard(game,resolution.index):discardDrawnAndReveal(game,resolution.index);
   }
-  announceColumns(before); render();
+  pulseBoard('discard-land'); botHoldUntil=Date.now()+1500; announceColumns(before); tone('flip'); render();
+}
+
+function openHandoff(index){
+  if(handoffPlayerIndex===index) return;
+  handoffPlayerIndex=index;
+  const player=game.players[index];
+  $('handoff-copy').textContent=`Gib das Gerät an ${player.name}. Deine Karten bleiben bis zum Antippen verdeckt.`;
+  $('handoff-ready').textContent=`Ich bin ${player.name}`;
+  $('handoff-modal').showModal();
 }
 
 function showResult(){
@@ -201,6 +240,10 @@ els.deck.addEventListener('click',()=>handlePile('deck'));
 els.discard.addEventListener('click',()=>handlePile('discard'));
 els.board.addEventListener('click',event=>{ const card=event.target.closest('[data-index]'); if(card) handleCard(Number(card.dataset.index)); });
 els.discardDrawn.addEventListener('click',()=>{ revealMode=!revealMode; tone('tap'); render(); });
+$('handoff-ready').onclick=()=>{
+  if(handoffPlayerIndex===null) return;
+  setViewer(handoffPlayerIndex); handoffPlayerIndex=null; $('handoff-modal').close(); render();
+};
 $('rules-btn').onclick=()=>$('info-modal').showModal();
 $('menu-btn').onclick=()=>{ clearTimeout(botTimer); els.setup.showModal(); };
 $('sound-btn').onclick=()=>{ soundOn=!soundOn; localStorage.setItem('tiefstapel-sound',soundOn?'on':'off'); els.soundLabel.textContent=soundOn?'Ton an':'Ton aus'; $('sound-btn').setAttribute('aria-pressed',String(soundOn)); tone('tap'); };

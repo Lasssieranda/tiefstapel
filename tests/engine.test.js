@@ -70,6 +70,22 @@ test('Finisher verdoppelt nur einen positiven Rundenscore, wenn jemand gleichauf
   assert.deepEqual(scoreRound([7, 9], 0), [7, 9]);
 });
 
+test('Öffentliche Aktionen dokumentieren nur die sichtbare Ablagekarte', () => {
+  const game = createGame([{name:'A',type:'human'},{name:'B',type:'bot'}], () => 0.42);
+  startRound(game);
+  for (const playerIndex of [0, 1]) for (const index of [0, 1]) revealInitialCard(game, index);
+  const visible = game.discard.at(-1);
+  drawFromDiscard(game);
+  assert.deepEqual(game.lastPublicAction, { type:'take-discard', actorIndex:game.currentPlayer, cardValue:visible, sequence:1 });
+  const discarded = game.players[game.currentPlayer].grid[0].value;
+  swapDrawnCard(game, 0);
+  assert.equal(game.lastPublicAction.type, 'swap');
+  assert.equal(game.lastPublicAction.cardValue, discarded);
+  assert.equal(game.discard.at(-1), discarded);
+  const restored = restoreSavedGame(structuredClone(createSavedGame(game)), () => 0.5);
+  assert.deepEqual(restored.lastPublicAction, game.lastPublicAction);
+});
+
 test('Gespeicherte Spielstände werden versioniert und streng validiert', () => {
   const game = createGame([{name:'A',type:'human'},{name:'B',type:'bot'}], () => 0.42);
   startRound(game);
@@ -89,6 +105,8 @@ test('Gespeicherte Spielstände werden versioniert und streng validiert', () => 
   assert.throws(() => restoreSavedGame(altered(data => { data.players[0].total = '12'; })));
   assert.throws(() => restoreSavedGame(altered(data => { data.players[0].roundScore = '<img src=x onerror=alert(1)>'; })));
   assert.throws(() => restoreSavedGame(altered(data => { data.drawnCard = '<img src=x onerror=alert(1)>'; })));
+  assert.throws(() => restoreSavedGame(altered(data => { data.lastPublicAction = { type:'swap', actorIndex:'0', cardValue:4, sequence:1 }; })));
+  assert.throws(() => restoreSavedGame(altered(data => { data.lastPublicAction = { type:'swap', actorIndex:0, cardValue:'<img>', sequence:1 }; })));
   assert.throws(() => restoreSavedGame(altered(data => { data.phase = 'freie-phase'; })));
   assert.throws(() => restoreSavedGame(altered(data => { data.players[0].grid.pop(); })));
   assert.throws(() => restoreSavedGame(altered(data => {

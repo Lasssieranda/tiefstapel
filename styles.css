@@ -260,9 +260,20 @@ main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
   position: relative;
   z-index: 2;
   display: flex;
-  gap: 23px;
-  margin: 2px 0 11px;
+  align-items: center;
+  gap: 28px;
+  margin: 2px 0 7px;
 }
+.discard-stage { position: relative; width: 76px; aspect-ratio: 3 / 4.25; display: grid; place-items: center; isolation: isolate; }
+.discard-stage .pile { position: relative; z-index: 3; width: 70px; }
+.discard-shadow { position: absolute; z-index: 1; width: 68px; height: 94px; border: 2px solid #f5f0df; border-radius: 10px; background: #d7c6a6; box-shadow: 0 4px 9px #092d2855; }
+.discard-shadow-one { transform: translate(-5px, 4px) rotate(-5deg); }
+.discard-shadow-two { z-index: 2; transform: translate(5px, 3px) rotate(4deg); background: #c0af90; }
+.last-action { position: relative; z-index: 3; width: min(100%, 290px); min-height: 42px; margin: 0 0 9px; padding: 7px 12px; border: 1px solid #f1ddb47d; border-radius: 13px; background: #0b372fda; box-shadow: 0 5px 14px #09282155, inset 0 1px #ffffff16; color: #fff9ed; text-align: center; }
+.last-action-kicker { display: block; margin-bottom: 2px; color: #f2d791; font-size: 7px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+.last-action strong { display: block; font-size: 10px; line-height: 1.3; }
+.opponent.active .opponent-name { color: #174f42; }
+.opponent.active .mini-player { border-color: #dfad53; box-shadow: 0 0 0 2px #e2aa4b35, 0 3px 9px #65563d22, inset 0 1px #fff; }
 .pile, .card {
   width: var(--card-width);
   aspect-ratio: 3 / 4.25;
@@ -427,7 +438,8 @@ body[data-phase="deck-choice"] .drawn-panel { box-shadow: 0 0 0 2px #f3d28275, 0
   animation: selectablePulse 1.45s ease-in-out infinite;
 }
 body[data-feedback="draw"] .deck { animation: pileDraw .38s cubic-bezier(.2,.85,.25,1); }
-body[data-feedback="take"] #discard-pile { animation: pileDraw .38s cubic-bezier(.2,.85,.25,1); }
+body[data-feedback="take"] #discard-stage { animation: pileDraw .5s cubic-bezier(.2,.85,.25,1); }
+body[data-feedback="discard-land"] #discard-stage { animation: discardLand .68s cubic-bezier(.18,.84,.24,1); }
 body[data-feedback="swap"] .board,
 body[data-feedback="reveal"] .board { animation: boardSettle .42s cubic-bezier(.2,.85,.25,1); }
 body[data-feedback="column"] .table { animation: tableCelebrate .5s cubic-bezier(.2,.85,.25,1); }
@@ -550,6 +562,8 @@ body[data-feedback="column"] .table { animation: tableCelebrate .5s cubic-bezier
 .modal-card > small { display: block; margin-top: 11px; color: var(--muted); font-size: 9px; }
 .close { position: absolute; z-index: 5; right: 13px; top: 13px; width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%; color: var(--ink); background: #fffaf0; font-size: 23px; }
 .rules-card { text-align: left; }
+.handoff-card { max-width: 360px; }
+.handoff-card p { margin: 14px auto 20px; max-width: 270px; }
 .rules-card .eyebrow, .rules-card h2 { padding-right: 45px; }
 .rules-card ol { padding-left: 22px; color: #52605c; }
 .rules-card li { margin: 10px 0; line-height: 1.38; }
@@ -571,6 +585,11 @@ body[data-feedback="column"] .table { animation: tableCelebrate .5s cubic-bezier
   0% { transform: translateY(0) scale(1); }
   40% { transform: translateY(-9px) scale(1.04) rotate(-1deg); }
   100% { transform: translateY(0) scale(1); }
+}
+@keyframes discardLand {
+  0% { transform: translateY(-14px) scale(1.06); filter: brightness(1.18); }
+  65% { transform: translateY(2px) scale(1); filter: brightness(1.1); }
+  100% { transform: translateY(0) scale(1); filter: brightness(1); }
 }
 @keyframes boardSettle {
   0% { transform: translateY(0) scale(1); filter: brightness(1); }

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.2 – 2026-08-14
+- Festes eigenes 3×4-Spielbrett: Bot-Züge aktualisieren nur Gegner-Miniaturen, Punktestand und Ablage; fremde Karten werden nicht mehr groß eingeblendet.
+- Zentraler Ablagestapel mit sichtbarer Stapeltiefe und dauerhaftem, öffentlichem Zugbeleg wie „Du legt 10 ab“.
+- Ruhiger Bot-Rhythmus: Quelle, Ablegen und mindestens 1,5 Sekunden Lesepause, bevor der nächste sichtbare Zug beginnt.
+- Lokaler Mehrspieler schützt Karten beim Wechsel mit einem bewussten „Gerät weitergeben“-Schirm.
+- Save-Version 2 speichert und validiert die letzte öffentliche Aktion; alte Version-1-Spielstände werden sicher übernommen.
+- Mobile-Browser- und Offline-Prüfung bei 390×844 und 360×740; App-Shell auf `?v=302`, Offline-Cache auf `tiefstapel-v8`.
+
 ## 0.3.1 – 2026-08-13
 - Premium-Spiel-HUD mit klarer aktiver-Spieler-Markierung und stärkerer optischer Hierarchie.
 - Stapelwahl ist als ruhiger Licht-/Rahmen-Puls sichtbar; Zieh-, Tausch-, Aufdeck- und Spaltenaktionen erhalten kontrolliertes Bewegungsfeedback.
