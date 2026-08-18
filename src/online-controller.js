@@ -5,6 +5,10 @@ const $=id=>document.getElementById(id);
 const params=new URLSearchParams(location.hash.slice(1));
 let room=null,role=params.get('role'),roomId=params.get('room'),password=params.get('pw'),connected=false;
 const api=()=>window.tiefstapelOnline;
+// Der Standard-Relay test.mosquitto.org ist nicht zuverlässig per WSS erreichbar.
+// Diese explizite, im Browser geprüfte kostenlose Signalisierung verhindert,
+// dass eine kaputte Standardverbindung die ganze Raumverhandlung blockiert.
+const SIGNAL_RELAY='wss://broker.hivemq.com:8884/mqtt';
 
 function randomToken(){const bytes=crypto.getRandomValues(new Uint8Array(18));return btoa(String.fromCharCode(...bytes)).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');}
 function setStatus(text){$('online-status').textContent=text;}
@@ -15,7 +19,7 @@ async function copyGuestLink(){const link=guestLink();try{await navigator.clipbo
 function sendState(target){const game=api().state();if(!game)return;stateAction.send({state:projectGameForSeat(game,1)},target?{target}:undefined).catch(()=>{});}
 let stateAction,proposalAction;
 function connect(){
- room=joinRoom({appId:'tiefstapel-public-private-v1',password,warnOnRelayFailure:false},roomId,{onJoinError:()=>setStatus('Verbindung wird erneut versucht …')});
+ room=joinRoom({appId:'tiefstapel-public-private-v1',password,relayConfig:{urls:[SIGNAL_RELAY],redundancy:1,warnOnRelayFailure:false}},roomId,{onJoinError:()=>setStatus('Verbindung wird erneut versucht …')});
  stateAction=room.makeAction('state');proposalAction=room.makeAction('proposal');
  stateAction.onMessage=payload=>{if(role==='guest'&&payload?.state){api().importState(payload.state);connected=true;hide();}};
  proposalAction.onMessage=(action,context)=>{if(role!=='host'||!validOnlineAction(api().state(),1,action))return;if(api().applyAction(action))sendState(context.peerId);};
