@@ -2,7 +2,7 @@ import {
   createGame, startRound, revealInitialCard, drawFromDiscard, drawFromDeck, swapDrawnCard,
   discardDrawnAndReveal, chooseBotAction, chooseBotMandatorySwap, chooseBotDeckResolution,
   createSavedGame, restoreSavedGame
-} from './engine.js?v=312';
+} from './engine.js?v=313';
 
 const $ = id => document.getElementById(id);
 const els = {

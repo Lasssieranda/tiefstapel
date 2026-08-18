@@ -16,6 +16,7 @@ function show(title,copy){$('online-title').textContent=title;$('online-copy').t
 function hide(){ $('online-lobby').classList.add('hidden'); }
 function guestLink(){const hash=new URLSearchParams({room:roomId,pw:password,role:'guest'});return `${location.origin}${location.pathname}${location.search}#${hash}`;}
 async function copyGuestLink(){const link=guestLink();try{await navigator.clipboard.writeText(link);}catch{const field=document.createElement('textarea');field.value=link;field.style.position='fixed';field.style.opacity='0';document.body.append(field);field.select();document.execCommand('copy');field.remove();}$('online-copy-btn').textContent='Link kopiert';setTimeout(()=>$('online-copy-btn').textContent='Einladungslink kopieren',1800);}
+async function shareGuestLink(){const link=guestLink();const share={title:'TIEFSTAPEL – private Partie',text:'Komm in meine private TIEFSTAPEL-Partie. Öffne diesen Link und tritt bei:',url:link};try{if(navigator.share){await navigator.share(share);setStatus('Einladung geteilt – du bleibst in dieser Partie.');return;}await copyGuestLink();setStatus('Einladungslink kopiert – du bleibst in dieser Partie.');}catch(error){if(error?.name!=='AbortError')setStatus('Teilen nicht verfügbar – der Einladungslink wurde kopiert.');}}
 function sendState(target){const game=api().state();if(!game)return;stateAction.send({state:projectGameForSeat(game,1)},target?{target}:undefined).catch(()=>{});}
 let stateAction,proposalAction;
 function connect(){
@@ -31,12 +32,13 @@ function connect(){
 function startHost(name){
  roomId=randomToken();password=randomToken();role='host';
  history.replaceState(null,'',`${location.pathname}${location.search}#${new URLSearchParams({room:roomId,pw:password,role})}`);
- show('Private Partie wird erstellt','Teile danach den Einladungslink mit genau einer Person.');$('online-copy-btn').classList.remove('hidden');$('online-guest-name-wrap').classList.add('hidden');$('online-join-btn').classList.add('hidden');setStatus('Warte auf Mitspieler …');
+ show('Private Partie wird erstellt','Teile den Einladungslink direkt über WhatsApp, Nachrichten oder deine Kontakte. Du bleibst dabei in dieser Partie.');$('online-share-btn').classList.remove('hidden');$('online-copy-btn').classList.remove('hidden');$('online-guest-name-wrap').classList.add('hidden');$('online-join-btn').classList.add('hidden');setStatus('Warte auf Mitspieler …');
  connect();api().startHost(name);$('setup').close();
 }
 function startGuest(){show('Private Partie wird verbunden','Der Host startet die Partie.');$('online-guest-name-wrap').classList.add('hidden');$('online-join-btn').classList.add('hidden');setStatus('Verbinde …');api().joinGuest();connect();}
 $('online-host-btn').addEventListener('click',()=>startHost(($('online-name').value||'Spieler 1').trim().slice(0,24)));
 $('online-copy-btn').addEventListener('click',copyGuestLink);
+$('online-share-btn').addEventListener('click',shareGuestLink);
 $('online-join-btn').addEventListener('click',startGuest);
 $('online-cancel-btn').addEventListener('click',()=>{room?.leave();history.replaceState(null,'',location.pathname+location.search);location.reload();});
 if(roomId&&password&&role==='guest'){if($('setup').open)$('setup').close();show('Private Einladung','Nur diese private Link-Partie verbindet dich mit dem Host.');$('online-guest-name-wrap').classList.remove('hidden');$('online-join-btn').classList.remove('hidden');$('online-copy-btn').classList.add('hidden');setStatus('Bereit zum Beitreten');}

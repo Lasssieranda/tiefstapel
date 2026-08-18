@@ -7,7 +7,7 @@ const text = async path => readFile(new URL(path, root), 'utf8');
 
 test('HTML enthält iPhone- und PWA-Metadaten sowie zentrale Spielbereiche', async () => {
   const html = await text('index.html');
-  for (const token of ['viewport-fit=cover','apple-mobile-web-app-capable','manifest.webmanifest','id="board"','id="setup"','id="install-btn"','id="online-host-btn"','id="online-lobby"','src/online.bundle.js']) assert.match(html, new RegExp(token));
+  for (const token of ['viewport-fit=cover','apple-mobile-web-app-capable','manifest.webmanifest','id="board"','id="setup"','id="install-btn"','id="online-host-btn"','id="online-lobby"','id="online-share-btn"','src/online.bundle.js']) assert.match(html, new RegExp(token));
   assert.doesNotMatch(html, /user-scalable=no/);
   for (const id of ['setup-title','rules-title','result-title','install-title']) assert.match(html, new RegExp(`aria-labelledby="${id}"`));
 });
@@ -16,6 +16,9 @@ test('Online-Partie nutzt einen explizit erreichbaren Signalisierungs-Relay', as
   const online = await text('src/online-controller.js');
   assert.match(online, /SIGNAL_RELAY='wss:\/\/broker\.hivemq\.com:8884\/mqtt'/);
   assert.match(online, /relayConfig:\{urls:\[SIGNAL_RELAY\],redundancy:1,warnOnRelayFailure:false\}/);
+  assert.match(online, /navigator\.share/);
+  assert.match(online, /online-share-btn/);
+  assert.match(online, /du bleibst in dieser Partie/);
 });
 
 test('Mobile QA-Rahmen sind semantisch valide und benennen ihre Spielansicht', async () => {
@@ -100,17 +103,17 @@ test('Eigenständiges Premium-Kartendesign hat klare Zustände, Wertfarben und E
   assert.match(app, /publicActions/);
   assert.match(app, /actionForSeat/);
   assert.match(app, /botHoldUntil/);
-  assert.match(app, /engine\.js\?v=312/);
-  assert.match(sw, /tiefstapel-v18/);
-  assert.match(sw, /src\/app\.js\?v=312/);
-  assert.match(sw, /online\.css\?v=312/);
-  assert.match(sw, /src\/online\.bundle\.js\?v=312/);
-  assert.match(sw, /manifest\.webmanifest\?v=312/);
-  assert.match(sw, /icons\/icon-192\.png\?v=312/);
-  assert.match(sw, /icons\/icon-512\.png\?v=312/);
-  assert.match(html, /src\/app\.js\?v=312/);
-  assert.match(html, /manifest\.webmanifest\?v=312/);
-  assert.match(html, /icons\/icon-192\.png\?v=312/);
-  assert.ok(manifest.icons.every(icon => icon.src.endsWith('?v=312')));
+  assert.match(app, /engine\.js\?v=313/);
+  assert.match(sw, /tiefstapel-v19/);
+  assert.match(sw, /src\/app\.js\?v=313/);
+  assert.match(sw, /online\.css\?v=313/);
+  assert.match(sw, /src\/online\.bundle\.js\?v=313/);
+  assert.match(sw, /manifest\.webmanifest\?v=313/);
+  assert.match(sw, /icons\/icon-192\.png\?v=313/);
+  assert.match(sw, /icons\/icon-512\.png\?v=313/);
+  assert.match(html, /src\/app\.js\?v=313/);
+  assert.match(html, /manifest\.webmanifest\?v=313/);
+  assert.match(html, /icons\/icon-192\.png\?v=313/);
+  assert.ok(manifest.icons.every(icon => icon.src.endsWith('?v=313')));
   assert.equal(manifest.theme_color, '#113e35');
 });
