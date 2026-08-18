@@ -2,7 +2,7 @@ import {
   createGame, startRound, revealInitialCard, drawFromDiscard, drawFromDeck, swapDrawnCard,
   discardDrawnAndReveal, chooseBotAction, chooseBotMandatorySwap, chooseBotDeckResolution,
   createSavedGame, restoreSavedGame
-} from './engine.js?v=310';
+} from './engine.js?v=311';
 
 const $ = id => document.getElementById(id);
 const els = {
@@ -20,6 +20,9 @@ let revealMode = false;
 let botTimer = null;
 let botHoldUntil = 0;
 let deferredInstallPrompt = null;
+let onlineMode = null;
+let onlineActionHandler = null;
+let applyingOnlineState = false;
 let soundOn = localStorage.getItem('tiefstapel-sound') !== 'off';
 let audioContext = null;
 const BOT_PHASES = ['initial-reveal','choose-pile','must-swap','deck-choice'];
@@ -47,7 +50,7 @@ function actionForSeat(seat, own){
   const action=[...actions].reverse().find(item => item.actorIndex !== null && (own ? item.actorIndex===seat : item.actorIndex!==seat));
   return action ? lastActionCopy(action) : own ? 'Du hast in dieser Runde noch keine öffentliche Aktion.' : 'Noch keine öffentliche Aktion der anderen Spieler.';
 }
-function shouldHandoff(){ return game && game.players.filter(player=>player.type==='human').length > 1 && isHumanTurn() && game.currentPlayer !== viewerPlayerIndex && !['round-over','game-over'].includes(game.phase); }
+function shouldHandoff(){ return !onlineMode && game && game.players.filter(player=>player.type==='human').length > 1 && isHumanTurn() && game.currentPlayer !== viewerPlayerIndex && !['round-over','game-over'].includes(game.phase); }
 function liveCards(player){ return player.grid.filter(card => !card.removed); }
 function hiddenCount(player){ return liveCards(player).filter(card => !card.revealed).length; }
 function esc(text){ const d=document.createElement('div'); d.textContent=text; return d.innerHTML; }
@@ -114,7 +117,7 @@ function render(){
   els.turnToken.classList.toggle('is-human',isHumanTurn() && !['round-over','game-over'].includes(game.phase));
   els.roundLabel.textContent=`Runde ${game.round}`;
   els.turnLabel.textContent=game.phase==='round-over'?'Runde beendet':game.phase==='game-over'?'Spiel beendet':game.phase==='initial-reveal'?`${current.name} deckt Startkarten auf`:`${current.name} ist dran`;
-  els.deckCount.textContent=game.deck.length;
+  els.deckCount.textContent=Array.isArray(game.deck)?game.deck.length:'–';
   const top=game.discard.at(-1);
   els.discardValue.textContent=top ?? '–';
   els.discard.className=`pile card ${valueClass(top ?? 0)}`;
@@ -160,7 +163,30 @@ function render(){
   if(['round-over','game-over'].includes(game.phase)) showResult();
   else if(shouldHandoff()) openHandoff(game.currentPlayer);
   else scheduleBot();
+  if(onlineMode&&!applyingOnlineState) window.dispatchEvent(new CustomEvent('tiefstapel:online-state',{detail:{state:game}}));
 }
+
+function applyOnlineAction(action){
+  if(!game||!onlineMode?.isHost) return false;
+  try{
+    if(action.type==='reveal-initial') revealInitialCard(game,action.index);
+    else if(action.type==='draw-deck') drawFromDeck(game);
+    else if(action.type==='take-discard') drawFromDiscard(game);
+    else if(action.type==='swap') swapDrawnCard(game,action.index);
+    else if(action.type==='discard-and-reveal') discardDrawnAndReveal(game,action.index);
+    else return false;
+    revealMode=false; render(); return true;
+  }catch{return false;}
+}
+
+window.tiefstapelOnline={
+  startHost(name){ onlineMode={isHost:true,seat:0}; game=createGame([{name,type:'human'},{name:'Gast',type:'human'}]); startRound(game); setViewer(0); handoffPlayerIndex=null; revealMode=false; render(); },
+  joinGuest(){ onlineMode={isHost:false,seat:1}; setViewer(1); handoffPlayerIndex=null; revealMode=false; },
+  importState(state){ applyingOnlineState=true; try{game=state;setViewer(onlineMode?.seat??1);handoffPlayerIndex=null;revealMode=false;render();}finally{applyingOnlineState=false;} },
+  state:()=>game,
+  applyAction:applyOnlineAction,
+  onAction(handler){onlineActionHandler=handler;}
+};
 
 function startNewGame(){
   const humans=Number(els.humans.value), bots=Number(els.bots.value), total=humans+bots;
@@ -174,10 +200,16 @@ function startNewGame(){
 
 function handlePile(source){
   if(!isViewerTurn()||game.phase!=='choose-pile') return;
+  if(onlineMode){ if(onlineMode.isHost) applyOnlineAction({type:source==='deck'?'draw-deck':'take-discard'}); else onlineActionHandler?.({type:source==='deck'?'draw-deck':'take-discard'}); return; }
   revealMode=false; source==='deck'?drawFromDeck(game):drawFromDiscard(game); pulseBoard(source==='deck'?'draw':'take'); tone('flip'); haptic(); render();
 }
 function handleCard(index){
   if(!isViewerTurn()||!game) return;
+  if(onlineMode){
+    const type=game.phase==='initial-reveal'?'reveal-initial':game.phase==='must-swap'||(game.phase==='deck-choice'&&!revealMode)?'swap':game.phase==='deck-choice'&&revealMode?'discard-and-reveal':null;
+    if(!type)return;
+    if(onlineMode.isHost) applyOnlineAction({type,index}); else onlineActionHandler?.({type,index}); return;
+  }
   try{
     if(game.phase==='initial-reveal'){
       revealInitialCard(game,index); pulseBoard('reveal'); tone('flip'); haptic();

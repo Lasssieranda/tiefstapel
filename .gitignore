@@ -1,4 +1,5 @@
 references/
 release/
 scripts/
+node_modules/
 .DS_Store

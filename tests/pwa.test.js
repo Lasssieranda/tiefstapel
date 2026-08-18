@@ -7,7 +7,7 @@ const text = async path => readFile(new URL(path, root), 'utf8');
 
 test('HTML enthält iPhone- und PWA-Metadaten sowie zentrale Spielbereiche', async () => {
   const html = await text('index.html');
-  for (const token of ['viewport-fit=cover','apple-mobile-web-app-capable','manifest.webmanifest','id="board"','id="setup"','id="install-btn"']) assert.match(html, new RegExp(token));
+  for (const token of ['viewport-fit=cover','apple-mobile-web-app-capable','manifest.webmanifest','id="board"','id="setup"','id="install-btn"','id="online-host-btn"','id="online-lobby"','src/online.bundle.js']) assert.match(html, new RegExp(token));
   assert.doesNotMatch(html, /user-scalable=no/);
   for (const id of ['setup-title','rules-title','result-title','install-title']) assert.match(html, new RegExp(`aria-labelledby="${id}"`));
 });
@@ -94,15 +94,17 @@ test('Eigenständiges Premium-Kartendesign hat klare Zustände, Wertfarben und E
   assert.match(app, /publicActions/);
   assert.match(app, /actionForSeat/);
   assert.match(app, /botHoldUntil/);
-  assert.match(app, /engine\.js\?v=310/);
-  assert.match(sw, /tiefstapel-v16/);
-  assert.match(sw, /src\/app\.js\?v=310/);
-  assert.match(sw, /manifest\.webmanifest\?v=310/);
-  assert.match(sw, /icons\/icon-192\.png\?v=310/);
-  assert.match(sw, /icons\/icon-512\.png\?v=310/);
-  assert.match(html, /src\/app\.js\?v=310/);
-  assert.match(html, /manifest\.webmanifest\?v=310/);
-  assert.match(html, /icons\/icon-192\.png\?v=310/);
-  assert.ok(manifest.icons.every(icon => icon.src.endsWith('?v=310')));
+  assert.match(app, /engine\.js\?v=311/);
+  assert.match(sw, /tiefstapel-v17/);
+  assert.match(sw, /src\/app\.js\?v=311/);
+  assert.match(sw, /online\.css\?v=311/);
+  assert.match(sw, /src\/online\.bundle\.js\?v=311/);
+  assert.match(sw, /manifest\.webmanifest\?v=311/);
+  assert.match(sw, /icons\/icon-192\.png\?v=311/);
+  assert.match(sw, /icons\/icon-512\.png\?v=311/);
+  assert.match(html, /src\/app\.js\?v=311/);
+  assert.match(html, /manifest\.webmanifest\?v=311/);
+  assert.match(html, /icons\/icon-192\.png\?v=311/);
+  assert.ok(manifest.icons.every(icon => icon.src.endsWith('?v=311')));
   assert.equal(manifest.theme_color, '#113e35');
 });

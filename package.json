@@ -1,11 +1,16 @@
 {
   "name": "tiefstapel",
-  "version": "0.3.10",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "esbuild src/online-controller.js --bundle --format=esm --minify --outfile=src/online.bundle.js && node -e \"const fs=require('fs');const p='src/online.bundle.js';fs.writeFileSync(p,fs.readFileSync(p,'utf8').replace(/[\\\\t ]+$/gm,''))\"",
     "test": "node --test tests/*.test.js",
-    "check": "node --check src/engine.js && node --check src/app.js && node --check sw.js",
+    "check": "node --check src/engine.js && node --check src/app.js && node --check src/online-state.js && node --check src/online-controller.js && node --check src/online.bundle.js && node --check sw.js",
     "serve": "python3 -m http.server 4173"
+  },
+  "devDependencies": {
+    "@trystero-p2p/mqtt": "^0.25.3",
+    "esbuild": "^0.25.8"
   }
 }

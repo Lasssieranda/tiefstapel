@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 – 2026-08-18
+- Neue kostenlose private Online-Partie für genau Host und eingeladene Person: Einladungslink, keine öffentliche Spielersuche und keine Konten.
+- Verbindung über die bestehende P2P-/MQTT-Technik; WLAN oder Mobilfunkdaten sind möglich. Bei Unterbrechung wird der Verbindungsstatus klar angezeigt.
+- Der Gast erhält keine Deck-Reihenfolge und keine Werte verdeckter Gegnerkarten; fremde Zugaktionen werden abgewiesen.
+- Mobile Entscheidungsansicht erneut bei 390×844 und 360×740 geprüft: untere 3×4-Reihe bleibt im Ziehzustand vollständig sichtbar, ohne Seitenscrollen.
+- App-Shell `?v=311`, Cache `tiefstapel-v17`.
+
 ## 0.3.10 – 2026-08-14
 - Die 3×4-Kartenauslage bleibt in den engen Entscheidungszuständen „Tauschen“ und „Ablegen“ vollständig sichtbar und antippbar.
 - In diesen Zuständen werden Karten, Zwischenräume und Überschrift gezielt verdichtet, statt die untere Reihe durch die feste App-Shell abzuschneiden.
